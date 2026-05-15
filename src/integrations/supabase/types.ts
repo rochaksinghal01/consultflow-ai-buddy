@@ -14,7 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      engagements: {
+        Row: {
+          additional_context: string | null
+          budget: string | null
+          challenge: string | null
+          client_name: string | null
+          company_size: string | null
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          current_step: number | null
+          deck_type: string | null
+          delivery_url: string | null
+          id: string
+          industry: string | null
+          objectives: string | null
+          presentation_id: string | null
+          project_name: string | null
+          qa_feedback: string | null
+          research_summary: string | null
+          slack_thread_ts: string | null
+          status: string | null
+          storyline_summary: string | null
+          timeline: string | null
+          updated_at: string
+        }
+        Insert: {
+          additional_context?: string | null
+          budget?: string | null
+          challenge?: string | null
+          client_name?: string | null
+          company_size?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          current_step?: number | null
+          deck_type?: string | null
+          delivery_url?: string | null
+          id?: string
+          industry?: string | null
+          objectives?: string | null
+          presentation_id?: string | null
+          project_name?: string | null
+          qa_feedback?: string | null
+          research_summary?: string | null
+          slack_thread_ts?: string | null
+          status?: string | null
+          storyline_summary?: string | null
+          timeline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          additional_context?: string | null
+          budget?: string | null
+          challenge?: string | null
+          client_name?: string | null
+          company_size?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          current_step?: number | null
+          deck_type?: string | null
+          delivery_url?: string | null
+          id?: string
+          industry?: string | null
+          objectives?: string | null
+          presentation_id?: string | null
+          project_name?: string | null
+          qa_feedback?: string | null
+          research_summary?: string | null
+          slack_thread_ts?: string | null
+          status?: string | null
+          storyline_summary?: string | null
+          timeline?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
