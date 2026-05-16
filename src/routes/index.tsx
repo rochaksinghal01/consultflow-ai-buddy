@@ -19,6 +19,17 @@ type Engagement = {
 
 function Dashboard() {
   const [rows, setRows] = useState<Engagement[] | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string, label: string) => {
+    if (!confirm(`Delete engagement "${label}"? This cannot be undone.`)) return;
+    setDeletingId(id);
+    const { error } = await supabase.from("engagements").delete().eq("id", id);
+    setDeletingId(null);
+    if (error) { toast.error(error.message); return; }
+    setRows((prev) => prev?.filter((r) => r.id !== id) ?? prev);
+    toast.success("Engagement deleted");
+  };
 
   useEffect(() => {
     let active = true;
