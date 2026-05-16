@@ -44,6 +44,8 @@ function EngagementPage() {
   const [tab, setTab] = useState<"research" | "storyline" | "qa" | "deck">("research");
   const [reviseOpen, setReviseOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [revisionNotes, setRevisionNotes] = useState("");
+  const [resubmitting, setResubmitting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
