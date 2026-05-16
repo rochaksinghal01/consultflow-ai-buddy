@@ -95,6 +95,36 @@ function EngagementPage() {
     setReviseOpen(false); setFeedback("");
   };
 
+  const resubmit = async () => {
+    if (!revisionNotes.trim()) { toast.error("Add revision notes first"); return; }
+    if (!e) return;
+    setResubmitting(true);
+    try {
+      await supabase
+        .from("engagements")
+        .update({ revision_notes: revisionNotes, status: "in_review" })
+        .eq("id", id);
+
+      const gate = e.revision_gate ?? 0;
+      const hook = REVISION_WEBHOOKS[gate];
+      if (hook) {
+        try {
+          await fetch(hook.url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ engagement_id: id, revision_notes: revisionNotes, ...(hook.extra ?? {}) }),
+          });
+        } catch {}
+      }
+      toast.success("Resubmitted for review");
+      setRevisionNotes("");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to resubmit");
+    } finally {
+      setResubmitting(false);
+    }
+  };
+
   return (
     <AppLayout>
       <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
