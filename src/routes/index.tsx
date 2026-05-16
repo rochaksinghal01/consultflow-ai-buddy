@@ -109,13 +109,24 @@ function Dashboard() {
                 <td className="px-5 py-3 text-muted-foreground">{r.current_step ?? 1} of 5</td>
                 <td className="px-5 py-3 text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</td>
                 <td className="px-5 py-3 text-right">
-                  <Link
-                    to="/engagement/$id"
-                    params={{ id: r.id }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> View
-                  </Link>
+                  <div className="inline-flex items-center gap-2">
+                    <Link
+                      to="/engagement/$id"
+                      params={{ id: r.id }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-border text-xs font-medium hover:bg-secondary"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(r.id, r.client_name ?? r.project_name ?? "this engagement")}
+                      disabled={deletingId === r.id}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 disabled:opacity-60"
+                      aria-label="Delete engagement"
+                    >
+                      {deletingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
