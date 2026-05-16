@@ -26,6 +26,16 @@ type Engagement = {
   qa_feedback: string | null;
   delivery_url: string | null;
   presentation_id: string | null;
+  revision_notes: string | null;
+  revision_gate: number | null;
+};
+
+const REVISION_WEBHOOKS: Record<number, { url: string; extra?: Record<string, unknown> }> = {
+  1: { url: "https://rochak01.app.n8n.cloud/webhook/research" },
+  2: { url: "https://rochak01.app.n8n.cloud/webhook/storyline" },
+  3: { url: "https://rochak01.app.n8n.cloud/webhook/qa-review" },
+  4: { url: "https://rochak01.app.n8n.cloud/webhook/delivery" },
+  5: { url: "https://rochak01.app.n8n.cloud/webhook/consultflow-approve", extra: { action: "revise" } },
 };
 
 function EngagementPage() {
