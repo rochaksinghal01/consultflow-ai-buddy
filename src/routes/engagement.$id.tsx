@@ -26,6 +26,16 @@ type Engagement = {
   qa_feedback: string | null;
   delivery_url: string | null;
   presentation_id: string | null;
+  revision_notes: string | null;
+  revision_gate: number | null;
+};
+
+const REVISION_WEBHOOKS: Record<number, { url: string; extra?: Record<string, unknown> }> = {
+  1: { url: "https://rochak01.app.n8n.cloud/webhook/research" },
+  2: { url: "https://rochak01.app.n8n.cloud/webhook/storyline" },
+  3: { url: "https://rochak01.app.n8n.cloud/webhook/qa-review" },
+  4: { url: "https://rochak01.app.n8n.cloud/webhook/delivery" },
+  5: { url: "https://rochak01.app.n8n.cloud/webhook/consultflow-approve", extra: { action: "revise" } },
 };
 
 function EngagementPage() {
@@ -34,6 +44,8 @@ function EngagementPage() {
   const [tab, setTab] = useState<"research" | "storyline" | "qa" | "deck">("research");
   const [reviseOpen, setReviseOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [revisionNotes, setRevisionNotes] = useState("");
+  const [resubmitting, setResubmitting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -83,6 +95,36 @@ function EngagementPage() {
     setReviseOpen(false); setFeedback("");
   };
 
+  const resubmit = async () => {
+    if (!revisionNotes.trim()) { toast.error("Add revision notes first"); return; }
+    if (!e) return;
+    setResubmitting(true);
+    try {
+      await supabase
+        .from("engagements")
+        .update({ revision_notes: revisionNotes, status: "in_review" })
+        .eq("id", id);
+
+      const gate = e.revision_gate ?? 0;
+      const hook = REVISION_WEBHOOKS[gate];
+      if (hook) {
+        try {
+          await fetch(hook.url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ engagement_id: id, revision_notes: revisionNotes, ...(hook.extra ?? {}) }),
+          });
+        } catch {}
+      }
+      toast.success("Resubmitted for review");
+      setRevisionNotes("");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to resubmit");
+    } finally {
+      setResubmitting(false);
+    }
+  };
+
   return (
     <AppLayout>
       <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
@@ -102,6 +144,44 @@ function EngagementPage() {
           <span className="text-foreground">Analysis in progress — step {current} of 5</span>
         </div>
       )}
+
+      {e.status === "revision_requested" && (
+        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-5">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-400 text-white text-sm font-bold">!</div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900">Revision Requested</h3>
+              <p className="text-sm text-amber-800 mt-0.5">
+                This engagement was sent back for changes. Add your feedback below and resubmit.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <label htmlFor="revision-notes" className="block text-sm font-medium text-amber-900 mb-1.5">
+              Revision Notes
+            </label>
+            <textarea
+              id="revision-notes"
+              rows={4}
+              value={revisionNotes}
+              onChange={(ev) => setRevisionNotes(ev.target.value)}
+              placeholder="Describe what needs to change..."
+              className="w-full px-3 py-2 rounded-lg border border-amber-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--navy)]/30"
+            />
+            <div className="mt-3 flex justify-end">
+              <button
+                onClick={resubmit}
+                disabled={resubmitting}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--navy)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-60"
+              >
+                {resubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                Resubmit for Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <div className="grid grid-cols-5 gap-6">
         {/* Stepper */}

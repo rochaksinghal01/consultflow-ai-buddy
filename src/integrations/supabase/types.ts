@@ -34,6 +34,8 @@ export type Database = {
           project_name: string | null
           qa_feedback: string | null
           research_summary: string | null
+          revision_gate: number | null
+          revision_notes: string | null
           slack_thread_ts: string | null
           status: string | null
           storyline_summary: string | null
@@ -59,6 +61,8 @@ export type Database = {
           project_name?: string | null
           qa_feedback?: string | null
           research_summary?: string | null
+          revision_gate?: number | null
+          revision_notes?: string | null
           slack_thread_ts?: string | null
           status?: string | null
           storyline_summary?: string | null
@@ -84,6 +88,8 @@ export type Database = {
           project_name?: string | null
           qa_feedback?: string | null
           research_summary?: string | null
+          revision_gate?: number | null
+          revision_notes?: string | null
           slack_thread_ts?: string | null
           status?: string | null
           storyline_summary?: string | null
