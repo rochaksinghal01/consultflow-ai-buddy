@@ -1,0 +1,1 @@
+CREATE POLICY "Public delete" ON public.engagements FOR DELETE TO public USING (true);
