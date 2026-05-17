@@ -33,11 +33,14 @@ export type Database = {
           presentation_id: string | null
           project_name: string | null
           qa_feedback: string | null
+          requirements_json: Json | null
+          research_brief: Json | null
           research_summary: string | null
           revision_gate: number | null
           revision_notes: string | null
           slack_thread_ts: string | null
           status: string | null
+          storyline_json: Json | null
           storyline_summary: string | null
           timeline: string | null
           updated_at: string
@@ -60,11 +63,14 @@ export type Database = {
           presentation_id?: string | null
           project_name?: string | null
           qa_feedback?: string | null
+          requirements_json?: Json | null
+          research_brief?: Json | null
           research_summary?: string | null
           revision_gate?: number | null
           revision_notes?: string | null
           slack_thread_ts?: string | null
           status?: string | null
+          storyline_json?: Json | null
           storyline_summary?: string | null
           timeline?: string | null
           updated_at?: string
@@ -87,11 +93,14 @@ export type Database = {
           presentation_id?: string | null
           project_name?: string | null
           qa_feedback?: string | null
+          requirements_json?: Json | null
+          research_brief?: Json | null
           research_summary?: string | null
           revision_gate?: number | null
           revision_notes?: string | null
           slack_thread_ts?: string | null
           status?: string | null
+          storyline_json?: Json | null
           storyline_summary?: string | null
           timeline?: string | null
           updated_at?: string
