@@ -237,8 +237,8 @@ function EngagementPage() {
             ))}
           </div>
           <div className="p-6 flex-1 overflow-auto">
-            {tab === "research" && <Markdown text={e.research_summary} placeholder="Research will appear here once Step 2 completes." />}
-            {tab === "storyline" && <Markdown text={e.storyline_summary} placeholder="Storyline will appear here once Step 3 completes." />}
+            {tab === "research" && <Markdown text={jsonToText(e.research_brief) ?? e.research_summary} placeholder="Research will appear here once Step 2 completes." />}
+            {tab === "storyline" && <Markdown text={jsonToText(e.storyline_json) ?? e.storyline_summary} placeholder="Storyline will appear here once Step 3 completes." />}
             {tab === "qa" && <Markdown text={e.qa_feedback} placeholder="QA feedback will appear here once Step 4 completes." />}
             {tab === "deck" && (
               e.delivery_url ? (
