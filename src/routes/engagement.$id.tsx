@@ -285,6 +285,18 @@ function EngagementPage() {
   );
 }
 
+function jsonToText(value: any): string | null {
+  if (value == null) return null;
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    // Prefer common text-ish fields if present
+    const pick = value.markdown ?? value.text ?? value.summary ?? value.content;
+    if (typeof pick === "string") return pick;
+    try { return "```json\n" + JSON.stringify(value, null, 2) + "\n```"; } catch { return String(value); }
+  }
+  return String(value);
+}
+
 function Markdown({ text, placeholder }: { text: string | null; placeholder: string }) {
   if (!text) return <div className="text-muted-foreground text-sm">{placeholder}</div>;
   // lightweight md: headings, lists, paragraphs
