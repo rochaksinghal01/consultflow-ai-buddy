@@ -23,6 +23,9 @@ type Engagement = {
   current_step: number | null;
   research_summary: string | null;
   storyline_summary: string | null;
+  requirements_json: any | null;
+  research_brief: any | null;
+  storyline_json: any | null;
   qa_feedback: string | null;
   delivery_url: string | null;
   presentation_id: string | null;
@@ -234,8 +237,8 @@ function EngagementPage() {
             ))}
           </div>
           <div className="p-6 flex-1 overflow-auto">
-            {tab === "research" && <Markdown text={e.research_summary} placeholder="Research will appear here once Step 2 completes." />}
-            {tab === "storyline" && <Markdown text={e.storyline_summary} placeholder="Storyline will appear here once Step 3 completes." />}
+            {tab === "research" && <Markdown text={jsonToText(e.research_brief) ?? e.research_summary} placeholder="Research will appear here once Step 2 completes." />}
+            {tab === "storyline" && <Markdown text={jsonToText(e.storyline_json) ?? e.storyline_summary} placeholder="Storyline will appear here once Step 3 completes." />}
             {tab === "qa" && <Markdown text={e.qa_feedback} placeholder="QA feedback will appear here once Step 4 completes." />}
             {tab === "deck" && (
               e.delivery_url ? (
@@ -280,6 +283,18 @@ function EngagementPage() {
       )}
     </AppLayout>
   );
+}
+
+function jsonToText(value: any): string | null {
+  if (value == null) return null;
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    // Prefer common text-ish fields if present
+    const pick = value.markdown ?? value.text ?? value.summary ?? value.content;
+    if (typeof pick === "string") return pick;
+    try { return "```json\n" + JSON.stringify(value, null, 2) + "\n```"; } catch { return String(value); }
+  }
+  return String(value);
 }
 
 function Markdown({ text, placeholder }: { text: string | null; placeholder: string }) {
