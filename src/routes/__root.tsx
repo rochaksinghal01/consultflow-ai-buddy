@@ -76,11 +76,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "ConsultFlow AI — Consulting Deck Automation" },
       { name: "description", content: "AI-powered platform that automates consulting deck creation from discovery to delivery." },
       { name: "author", content: "ConsultFlow AI" },
-      { property: "og:title", content: "ConsultFlow AI" },
-      { property: "og:description", content: "AI-powered consulting deck automation." },
+      { property: "og:title", content: "ConsultFlow AI — Consulting Deck Automation" },
+      { property: "og:description", content: "AI-powered platform that automates consulting deck creation from discovery to delivery." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "ConsultFlow AI — Consulting Deck Automation" },
+      { name: "twitter:description", content: "AI-powered platform that automates consulting deck creation from discovery to delivery." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3270edf3-15f5-4cc5-8ccd-7e81cce45611" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/3270edf3-15f5-4cc5-8ccd-7e81cce45611" },
     ],
     links: [
       {
