@@ -23,6 +23,9 @@ type Engagement = {
   current_step: number | null;
   research_summary: string | null;
   storyline_summary: string | null;
+  requirements_json: any | null;
+  research_brief: any | null;
+  storyline_json: any | null;
   qa_feedback: string | null;
   delivery_url: string | null;
   presentation_id: string | null;
