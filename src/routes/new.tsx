@@ -16,27 +16,27 @@ const BUDGETS = ["<$50K", "$50-200K", "$200K-1M", "$1M+"];
 const DECK_DETAILS = {
   strategy: {
     accent: "border-blue-500 bg-blue-50",
-    title: "Strategy / Go-To-Market",
-    desc: "Market entry, growth strategy, competitive positioning, GTM planning",
-    slides: ["Executive Summary", "Market Analysis", "Competitive Landscape", "Strategic Options", "Opportunity Sizing", "Financial Impact", "Recommendations"],
+    title: "Strategy",
+    desc: "Strategic recommendations, competitive positioning, roadmaps and financial impact analysis",
+    slides: ["Executive Summary", "Current State", "Root Cause Analysis", "Strategic Options", "Opportunity Sizing", "Implementation Roadmap", "Financial Impact"],
   },
-  due_diligence: {
+  gtm: {
     accent: "border-purple-500 bg-purple-50",
-    title: "Due Diligence / M&A",
-    desc: "Investment thesis, target assessment, risk analysis, deal structuring",
-    slides: ["Investment Thesis", "Market Position", "Revenue Analysis", "Risk Assessment", "Valuation", "Deal Recommendations"],
+    title: "Go-To-Market",
+    desc: "Market entry, customer segmentation, channel strategy, revenue model and launch planning",
+    slides: ["Market Sizing (TAM/SAM/SOM)", "Customer Segments", "Competitive Landscape", "Value Proposition", "GTM Channels", "Revenue Model", "Launch Roadmap"],
   },
-  fundraising: {
+  diagnostic: {
     accent: "border-green-500 bg-green-50",
-    title: "Fundraising / Investor",
-    desc: "Pitch decks, investor narrative, market opportunity, financial projections",
-    slides: ["The Problem", "Our Solution", "Market Opportunity", "Business Model", "Traction", "Financial Projections", "The Ask"],
+    title: "Diagnostic / Assessment",
+    desc: "Performance benchmarking, root cause analysis, value leakage identification and improvement roadmap",
+    slides: ["Diagnostic Mandate", "Performance vs Peers", "Current State Assessment", "Root Cause Analysis", "Value Leakage", "Priority Opportunities", "Recommended Roadmap"],
   },
-  operational: {
+  investor: {
     accent: "border-orange-500 bg-orange-50",
-    title: "Operational / Transformation",
-    desc: "Process improvement, digital transformation, org design, change management",
-    slides: ["Current State Assessment", "Gap Analysis", "Target Operating Model", "Initiative Prioritization", "Roadmap", "Business Case"],
+    title: "Investor / Board",
+    desc: "Pitch decks, investor narrative, market opportunity, financial projections and the ask",
+    slides: ["The Problem", "Our Solution", "Market Opportunity", "Business Model", "Traction & Metrics", "Financial Projections", "The Ask"],
   },
 } as const;
 
@@ -55,8 +55,8 @@ function NewEngagement() {
     contact_email: "",
     deck_type: "" as DeckKey | "",
     project_name: "",
-    challenge: "",
-    objectives: "",
+    constraints: "",
+    engagement_goal: "",
     timeline: "",
     budget: "",
     additional_context: "",
@@ -77,8 +77,8 @@ function NewEngagement() {
     if (step === 1 && !form.deck_type) e.deck_type = "Pick a deck type";
     if (step === 2) {
       if (!form.project_name) e.project_name = "Required";
-      if (!form.challenge) e.challenge = "Required";
-      if (!form.objectives) e.objectives = "Required";
+      if (!form.constraints) e.constraints = "Required";
+      if (!form.engagement_goal) e.engagement_goal = "Required";
       if (!form.timeline) e.timeline = "Required";
       if (!form.budget) e.budget = "Required";
     }
@@ -94,7 +94,22 @@ function NewEngagement() {
     setSubmitting(true);
     const { data, error } = await supabase
       .from("engagements")
-      .insert({ ...form, status: "discovery", current_step: 1 })
+      .insert({
+        client_name: form.client_name,
+        industry: form.industry,
+        deck_type: form.deck_type,
+        engagement_goal: form.engagement_goal,
+        constraints: form.constraints,
+        timeline: form.timeline,
+        contact_name: form.contact_name,
+        contact_email: form.contact_email,
+        company_size: form.company_size,
+        project_name: form.project_name,
+        budget: form.budget,
+        additional_context: form.additional_context,
+        firm_id: "5d545ea4-9f25-4b21-bf86-18da1d4f62fe",
+        status: "discovery",
+      })
       .select("id")
       .single();
     if (error || !data) {
@@ -106,7 +121,18 @@ function NewEngagement() {
       await fetch("https://rochak01.app.n8n.cloud/webhook/consultflow-start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: data.id, ...form }),
+        body: JSON.stringify({
+          id: data.id,
+          client_name: form.client_name,
+          industry: form.industry,
+          deck_type: form.deck_type,
+          objectives: form.engagement_goal,
+          challenge: form.constraints,
+          timeline: form.timeline,
+          budget: form.budget,
+          company_size: form.company_size,
+          additional_context: form.additional_context,
+        }),
       });
     } catch {
       // non-blocking
@@ -260,13 +286,13 @@ function Step3({ form, set, errors }: any) {
         <input className={inputCls} placeholder="e.g. 2 weeks" value={form.timeline} onChange={(e) => set("timeline", e.target.value)} />
       </Field>
       <div className="col-span-2">
-        <Field label="Business Challenge" error={errors.challenge}>
-          <textarea rows={3} className={inputCls} value={form.challenge} onChange={(e) => set("challenge", e.target.value)} />
+        <Field label="Business Challenge / Constraints" error={errors.constraints}>
+          <textarea rows={3} className={inputCls} value={form.constraints} onChange={(e) => set("constraints", e.target.value)} />
         </Field>
       </div>
       <div className="col-span-2">
-        <Field label="Strategic Objectives" error={errors.objectives}>
-          <textarea rows={3} className={inputCls} value={form.objectives} onChange={(e) => set("objectives", e.target.value)} />
+        <Field label="Strategic Objectives / Engagement Goal" error={errors.engagement_goal}>
+          <textarea rows={3} className={inputCls} value={form.engagement_goal} onChange={(e) => set("engagement_goal", e.target.value)} />
         </Field>
       </div>
       <Field label="Budget Range" error={errors.budget}>
@@ -290,7 +316,7 @@ function Step4({ form }: any) {
     ["Contact", `${form.contact_name} <${form.contact_email}>`],
     ["Deck Type", DECK_DETAILS[form.deck_type as DeckKey]?.title ?? "—"],
     ["Project Name", form.project_name], ["Timeline", form.timeline], ["Budget", form.budget],
-    ["Challenge", form.challenge], ["Objectives", form.objectives],
+    ["Challenge / Constraints", form.constraints], ["Strategic Objectives", form.engagement_goal],
     ["Additional Context", form.additional_context || "—"],
   ];
   return (

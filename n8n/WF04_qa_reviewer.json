@@ -1,0 +1,23 @@
+{
+  "_metadata": {
+    "exported_at": "2026-05-19",
+    "export_note": "Full workflow JSON available in n8n Cloud. Import via n8n UI: Workflows > Import from File. Update credentials and webhook URLs for local setup.",
+    "n8n_cloud_workflow_id": "5cEIzgcFAXtdyG0e",
+    "local_setup_tip": "Run 'npx n8n' then import this file. Update webhook base URL from rochak01.app.n8n.cloud to localhost:5678"
+  },
+  "name": "QA reviewer",
+  "id": "5cEIzgcFAXtdyG0e",
+  "description": "QA Reviewer \u2014 Scores storyline against 5 criteria. Gate 4 Slack approval.",
+  "webhook": "POST /webhook/qa-review",
+  "gate": 4,
+  "n8n_cloud_url": "https://rochak01.app.n8n.cloud/webhook/qa-review",
+  "status": "active",
+  "supabase_project": "dajgvomfgiurpymfqzgd",
+  "credentials_required": [
+    "Supabase (dajgvomfgiurpymfqzgd)",
+    "Google Slides OAuth2",
+    "Slack OAuth2",
+    "Google Gemini API",
+    "Pinecone"
+  ]
+}
