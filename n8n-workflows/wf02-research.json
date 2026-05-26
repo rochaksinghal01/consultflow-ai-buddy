@@ -1,0 +1,527 @@
+{
+  "name": "Research Analyst",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "research",
+        "options": {}
+      },
+      "id": "961b1690-b1f2-47f3-94aa-3acfe0b7fce4",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        208
+      ],
+      "webhookId": "40457120-b952-4fc5-b423-d911fa7b9b95"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $('Webhook').first().json.body.engagement_id }}"
+            }
+          ]
+        }
+      },
+      "id": "74b4b790-e0c8-4e82-b19f-651e6c2caf06",
+      "name": "Get a row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        208
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookBody = $('Webhook').first().json.body;\nconst dbRow = $('Get a row').first().json || {};\n\nlet req = webhookBody.requirements_json || dbRow.requirements_json || {};\nif (typeof req === 'string') {\n  try { req = JSON.parse(req); } catch(e) { req = {}; }\n}\n\nconst engagementId = webhookBody.engagement_id;\nconst revision_notes = webhookBody.revision_notes || dbRow.revision_notes || '';\nconst keyQs = req.key_questions ? req.key_questions.join(' | ') : '';\n\nlet agentInput = \"You are researching for a consulting engagement. Here are the details:\\n\\n\" +\n  \"Client: \" + (req.client_name || webhookBody.client_name || '') + \"\\n\" +\n  \"Industry: \" + (req.industry || '') + \"\\n\" +\n  \"Deck Type: \" + (req.deck_type || webhookBody.deck_type || '') + \"\\n\" +\n  \"Engagement Goal: \" + (req.engagement_goal || '') + \"\\n\" +\n  \"Key Questions: \" + keyQs + \"\\n\" +\n  \"Timeline: \" + (req.timeline || '') + \"\\n\" +\n  \"Constraints: \" + (req.constraints || '') + \"\\n\" +\n  \"Search Query: \" + (req.rag_search_query || '') + \"\\n\\n\";\n\nif (revision_notes) {\n  agentInput += \"\\u26a0\\ufe0f REVISION FEEDBACK \\u2014 incorporate this into the research: \" + revision_notes + \"\\n\\n\";\n}\n\nagentInput += \"Use the knowledge base tool to search for relevant consulting frameworks and insights. Then output ONLY this JSON, no markdown:\\n\\n\" +\n  \"{\\n\" +\n  \"  \\\"research_brief\\\": {\\n\" +\n  \"    \\\"market_context\\\": \\\"2-3 sentence market summary\\\",\\n\" +\n  \"    \\\"key_findings\\\": [{\\\"finding\\\": \\\"insight\\\", \\\"source\\\": \\\"source\\\", \\\"confidence\\\": \\\"high\\\"}],\\n\" +\n  \"    \\\"strategic_recommendations\\\": [\\\"rec 1\\\", \\\"rec 2\\\", \\\"rec 3\\\"],\\n\" +\n  \"    \\\"risks_and_considerations\\\": [\\\"risk 1\\\", \\\"risk 2\\\"],\\n\" +\n  \"    \\\"knowledge_base_hits\\\": 3,\\n\" +\n  \"    \\\"ready_for_storyline\\\": true\\n\" +\n  \"  }\\n\" +\n  \"}\";\n\nreturn {\n  json: {\n    agent_input: agentInput,\n    engagement_id: engagementId,\n    requirements: req,\n    revision_notes: revision_notes\n  }\n};"
+      },
+      "id": "3c3d4b1a-f88d-4956-95d0-ea583be43eab",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.agent_input }}",
+        "options": {}
+      },
+      "id": "38a6363f-34a3-4a8d-be4e-e736fc2e6eab",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "5df3a8b6-1684-4bc8-8a58-55ab99c76bb4",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        432
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "lyRZnQVFcLzUjNaj",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search for consulting frameworks, GTM strategies, market data, and best practices",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "consultflow-ai",
+          "mode": "list",
+          "cachedResultName": "consultflow-ai"
+        },
+        "topK": 3,
+        "options": {
+          "pineconeNamespace": "meridian-demo"
+        }
+      },
+      "id": "e99db876-354f-4389-a0b9-4bf884a947fc",
+      "name": "Pinecone Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        432
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "qT9hbvndXL1sx0R0",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "4b079676-d6fe-4506-97cb-4d7b3fd34870",
+      "name": "Embeddings Google Gemini",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        816,
+        640
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "lyRZnQVFcLzUjNaj",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.item.json.output;\nconst cleaned = raw.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\nconst parsed = JSON.parse(cleaned);\n\nconst webhookBody = $('Webhook').first().json.body;\nconst dbRow = $('Get a row').first().json || {};\n\nlet req = webhookBody.requirements_json || dbRow.requirements_json || {};\nif (typeof req === 'string') {\n  try { req = JSON.parse(req); } catch(e) { req = {}; }\n}\n\nconst brief = parsed.research_brief || {};\nconst findings = (brief.key_findings || []).slice(0, 4).map(function(f) { return '• ' + f.finding; }).join('\\n');\nconst recs = (brief.strategic_recommendations || []).slice(0, 3).map(function(r) { return '• ' + r; }).join('\\n');\nconst risks = (brief.risks_and_considerations || []).slice(0, 2).map(function(r) { return '• ' + r; }).join('\\n');\n\nconst research_preview = ('*Market Context:*\\n' + (brief.market_context || '') +\n  '\\n\\n*Key Findings:*\\n' + findings +\n  '\\n\\n*Strategic Recommendations:*\\n' + recs +\n  '\\n\\n*Risks:*\\n' + risks).slice(0, 2500);\n\nreturn {\n  json: {\n    research_brief: parsed.research_brief,\n    research_preview: research_preview,\n    engagement_id: webhookBody.engagement_id,\n    requirements: req\n  }\n};"
+      },
+      "id": "ab82f88b-40b0-478c-9ff5-e75ae5d2034b",
+      "name": "Code in JavaScript1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.engagement_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "storyline_review"
+            },
+            {
+              "fieldId": "research_brief",
+              "fieldValue": "={{ JSON.stringify($json.research_brief) }}"
+            }
+          ]
+        }
+      },
+      "id": "128244ff-3f4c-43dc-93c9-5c8a8942b7df",
+      "name": "Update a row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        208
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B33AV1A3U",
+          "mode": "list",
+          "cachedResultName": "gates"
+        },
+        "message": "=*Gate 2: Research Review*\n\n*Client:* {{ $('Code in JavaScript1').item.json.requirements.client_name || $('Webhook').first().json.body.client_name }}\n*Deck Type:* {{ $('Webhook').first().json.body.deck_type }}\n*Engagement ID:* {{ $('Code in JavaScript1').item.json.engagement_id }}\n\n{{ $('Code in JavaScript1').item.json.research_preview }}\n\nUse the form link to Approve or Decline with feedback.",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "={{ \"customForm\" }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "8e8fa1f8-29fe-4ae3-a0e6-069932be4625",
+      "name": "Gate 2 Research Review",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1472,
+        208
+      ],
+      "webhookId": "e6197d7b-cd65-401c-9a10-a0bf6f36c8b8",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "RvtsGwRYrVWx7tiQ",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "r2-approval",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "24137f0d-5487-4fa8-a45a-2830dd90f311",
+      "name": "If1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rochak01.app.n8n.cloud/webhook/storyline",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "engagement_id",
+              "value": "={{ $('Code in JavaScript1').item.json.engagement_id }}"
+            },
+            {
+              "name": "requirements_json",
+              "value": "={{ JSON.stringify($('Code in JavaScript1').item.json.requirements) }}"
+            },
+            {
+              "name": "research_brief",
+              "value": "={{ JSON.stringify($('Code in JavaScript1').item.json.research_brief) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a63f633e-a4ec-49f3-a7b7-0c00e456eb31",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1920,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Code in JavaScript1').item.json.engagement_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "revision_requested"
+            },
+            {
+              "fieldId": "revision_gate",
+              "fieldValue": "2"
+            },
+            {
+              "fieldId": "revision_notes",
+              "fieldValue": "={{ $json.Feedback || '' }}"
+            }
+          ]
+        }
+      },
+      "id": "423a4552-9332-40fd-bd0f-168b5d47b576",
+      "name": "Update revision status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        304
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rochak01.app.n8n.cloud/webhook/research",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "engagement_id",
+              "value": "={{ $('Code in JavaScript1').item.json.engagement_id }}"
+            },
+            {
+              "name": "revision_notes",
+              "value": "={{ $('Gate 2 Research Review').item.json.Feedback || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5d6af891-d42a-4c99-a5a2-0caa091df9c6",
+      "name": "Retrigger Research",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2144,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Gate 2 Research Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gate 2 Research Review": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update revision status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update revision status": {
+      "main": [
+        [
+          {
+            "node": "Retrigger Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "607608a4-58a2-46e1-8355-8b6b77421069",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "4ac2396af9323fa3ba2e3ba4892c2c6a3beaa8ff4a2d77b9d22ed0dd12cf4044"
+  },
+  "id": "AjVC8FVd9RAmRyN0",
+  "tags": []
+}

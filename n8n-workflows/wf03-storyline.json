@@ -1,0 +1,234 @@
+{
+  "name": "Storyline Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "storyline",
+        "options": {}
+      },
+      "id": "34a381ba-e289-442e-a75b-607bd85fd6b1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "f1562113-b9e9-47a0-89ec-4a9233c750a4"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.body.engagement_id }}"
+            }
+          ]
+        }
+      },
+      "id": "f3d0c505-f21e-4a52-8e3e-c19834e5e3fa",
+      "name": "Get a row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        112
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookBody = $('Webhook').first().json.body;\nconst dbRow = $input.first().json || {};\nlet req = webhookBody.requirements_json || dbRow.requirements_json || {};\nif (typeof req === 'string') { try { req = JSON.parse(req); } catch(e) { req = {}; } }\nlet researchBrief = webhookBody.research_brief || dbRow.research_brief || {};\nif (typeof researchBrief === 'string') { try { researchBrief = JSON.parse(researchBrief); } catch(e) { researchBrief = {}; } }\nconst engagement_id = webhookBody.engagement_id;\nconst client_name = webhookBody.client_name || dbRow.client_name || req.client_name || 'Client';\nconst deck_type = webhookBody.deck_type || dbRow.deck_type || req.deck_type || 'strategy';\nconst revision_notes = webhookBody.revision_notes || dbRow.revision_notes || '';\nconst researchText = typeof researchBrief === 'string' ? researchBrief : JSON.stringify(researchBrief);\nlet promptStr = 'You are a senior consulting partner creating a board-ready deck storyline for ' + client_name + '.\\nDeck type: ' + deck_type + '\\nEngagement goal: ' + (req.engagement_goal || '') + '\\n\\nResearch findings:\\n' + researchText;\nif (revision_notes) { promptStr += '\\n\\nREVISION FEEDBACK — incorporate this into the storyline: ' + revision_notes; }\npromptStr += '\\n\\nCreate a structured consulting storyline with clear SCR (Situation-Complication-Resolution) narrative.\\n\\nOutput ONLY valid JSON:\\n{\"deck_title\": \"string\", \"executive_summary\": \"string\", \"slides\": [{\"slide_title\": \"string\", \"key_message\": \"string\", \"supporting_points\": [\"string\"]}]}';\nreturn [{ json: { engagement_id, client_name, deck_type, requirements: req, research_brief: researchBrief, prompt: promptStr, revision_notes } }];"
+      },
+      "id": "0dcaff1f-d2f7-4697-bed2-90914e02e635",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "options": {}
+      },
+      "id": "b0fe1695-df31-4c6c-b235-5ca9d5ced202",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "3fb3e5ec-380d-4c07-8313-3de7852d7f68",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        752,
+        336
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "lyRZnQVFcLzUjNaj",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json.output || $input.first().json.text || '';\nconst cleaned = agentOutput.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\nlet prev = {};\ntry { prev = $('Code in JavaScript').first().json; } catch(e) {}\nconst engagement_id = prev.engagement_id || '';\nconst client_name = prev.client_name || '';\nconst deck_type = prev.deck_type || 'strategy';\nconst requirements = prev.requirements || {};\nconst research_brief = prev.research_brief || '';\nlet storyline_output = {};\ntry { storyline_output = JSON.parse(cleaned); } catch(e) { storyline_output = { deck_title: 'Deck', executive_summary: cleaned, slides: [] }; }\nreturn [{ json: { engagement_id, client_name, deck_type, storyline_output, requirements, research_brief } }];"
+      },
+      "id": "2354f1b1-9eb0-4151-a39d-84ec40b39b70",
+      "name": "Code in JavaScript1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Code in JavaScript1').item.json.engagement_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "final_review"
+            },
+            {
+              "fieldId": "storyline_json",
+              "fieldValue": "={{ $('Code in JavaScript1').item.json.storyline_output }}"
+            }
+          ]
+        }
+      },
+      "id": "c04a23dc-ad98-4986-8569-f43e1254d292",
+      "name": "Update a row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        112
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "c5342f3b-80b9-45d2-afa9-83d3ab57e415",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "4ac2396af9323fa3ba2e3ba4892c2c6a3beaa8ff4a2d77b9d22ed0dd12cf4044"
+  },
+  "id": "PQdUWJGUA9P7puSx",
+  "tags": []
+}

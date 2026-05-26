@@ -1,0 +1,350 @@
+{
+  "name": "Google Slide",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "delivery",
+        "options": {}
+      },
+      "id": "409a2e8d-24dd-474b-856b-7bc0fe161946",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "5c97c091-afeb-447e-9d42-58351e3f7751"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.body.engagement_id }}"
+            }
+          ]
+        }
+      },
+      "id": "40f73277-d331-400e-a7a5-4f6416c547c9",
+      "name": "Get a row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        112
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookBody = $('Webhook').first().json.body;\nconst dbRow = $input.item.json || {};\nlet req = webhookBody.requirements_json || dbRow.requirements_json || {};\nif (typeof req === 'string') { try { req = JSON.parse(req); } catch(e) { req = {}; } }\nlet storyline = webhookBody.storyline_json || dbRow.storyline_json || {};\nif (typeof storyline === 'string') { try { storyline = JSON.parse(storyline); } catch(e) { storyline = {}; } }\nconst engagement_id = webhookBody.engagement_id || dbRow.id || '';\nconst deck_title = storyline.deck_title || 'Consulting Deck';\nconst slides = storyline.slides ? storyline.slides.map(function(slide) {\n  return { title: slide.slide_title, body: [slide.key_message].concat(slide.supporting_points || []).join('\\n\\n') };\n}) : [];\nreturn { json: { engagement_id, deck_title, executive_summary: storyline.executive_summary || '', slides, requirements: req, total_slides: slides.length } };"
+      },
+      "id": "5af62961-1275-4c8c-b9bb-fbe2295e26dc",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookBody = $('Webhook').first().json.body;\nconst row = $('Get a row').first().json || {};\nconst codeOut = $input.item.json;\nconst engagement_id  = codeOut.engagement_id || webhookBody.engagement_id || row.id || '';\nconst client_name    = row.client_name || webhookBody.client_name || 'Client';\nconst industry       = row.industry || webhookBody.industry || 'General';\nconst deck_type      = row.deck_type || webhookBody.deck_type || 'gtm';\nconst deck_title     = codeOut.deck_title || (client_name + ' ' + deck_type.toUpperCase() + ' Deck');\nconst revision_notes = webhookBody.revision_notes || row.revision_notes || '';\nlet requirementsObj = codeOut.requirements || {};\nconst requirements = typeof requirementsObj === 'object' ? JSON.stringify(requirementsObj) : requirementsObj;\nlet researchBriefObj = {};\ntry { var rb = webhookBody.research_brief || row.research_brief || '{}'; researchBriefObj = typeof rb === 'string' ? JSON.parse(rb) : rb; } catch(e) {}\nconst research = JSON.stringify(researchBriefObj);\nlet qualityReportObj = {};\ntry { var qr = row.quality_report || '{}'; qualityReportObj = typeof qr === 'string' ? JSON.parse(qr) : qr; } catch(e) {}\nconst quality = JSON.stringify(qualityReportObj);\nconst STRUCTURES = {\n  gtm: '[SECTION: Market Context]\\n1. Title\\n2. Executive Summary — 3 key takeaways from this GTM analysis\\n3. Market Sizing — TAM/SAM/SOM with bottom-up build (include bar chart: TAM SAM SOM $B by year)\\n4. Customer Segmentation — ICP definition, segment sizing, willingness-to-pay (include doughnut chart: revenue share by segment %)\\n[SECTION: Go-to-Market Strategy]\\n5. Competitive Landscape — 4-6 named competitors with positioning matrix\\n6. Value Proposition & Differentiation — 3 core differentiators vs next-best alternative\\n7. Channel Strategy & Sales Motion — direct vs partner, AE capacity, sales cycle (include horizontalBar chart: channel revenue potential $M)\\n8. Pricing Architecture — land-and-expand model, benchmark vs peers\\n[SECTION: Execution & Financials]\\n9. Marketing & Demand Generation — CAC by channel, pipeline coverage ratio\\n10. Launch Roadmap — phased 18-month plan with owners (include horizontalBar chart: phase timeline by quarter)\\n11. Financial Projections — 3-year ARR, gross margin, EBITDA (include bar chart: ARR and EBITDA $M by year)\\n12. Resource Requirements — headcount, capex, GTM budget\\n13. KPIs & Success Metrics — 5 leading and lagging indicators\\n14. Risk Register & Mitigation — top 5 risks with probability and impact',\n  strategy: '[SECTION: Situation & Context]\\n1. Title\\n2. Executive Summary — 3 headline recommendations with financial impact\\n3. Engagement Context & Scope — mandate, workstreams, timeline\\n4. Current State Assessment — performance vs peers (include bar chart: KPIs vs industry benchmark)\\n[SECTION: Opportunity Analysis]\\n5. Root Cause Analysis — MECE issue tree, primary vs secondary causes\\n6. Market Landscape — TAM, competitive dynamics, adjacencies (include bar chart: market share % by player)\\n7. Strategic Options — 3-4 scenarios with NPV and risk profile\\n8. Recommended Strategy — preferred path with rationale\\n[SECTION: Implementation & Value]\\n9. Operating Model Changes — org, process, technology implications\\n10. Implementation Roadmap — phased plan with milestones (include horizontalBar chart: initiative timeline by quarter)\\n11. Financial Impact — EBITDA bridge, NPV, payback period (include bar chart: EBITDA bridge $M from baseline to target)\\n12. Risk Register — top risks, probability, mitigation levers\\n13. Quick Wins — initiatives deliverable in 90 days with clear owners\\n14. Next Steps & Governance — decisions required, steering committee cadence',\n  diagnostic: '[SECTION: Diagnostic Overview]\\n1. Title\\n2. Executive Summary — 3 critical findings, total value at stake\\n3. Diagnostic Mandate & Methodology — scope, data sources, benchmarks used\\n4. Performance Benchmarking — KPIs vs best-in-class peers (include bar chart: performance score by dimension vs benchmark)\\n[SECTION: Root Cause Analysis]\\n5. Current State Assessment — 5-dimension capability scan: people, process, technology, data, governance\\n6. Root Cause Analysis — MECE issue tree, systemic vs symptomatic causes\\n7. Value Leakage Identification — where EBITDA is being lost (include bar chart: value at stake $M by lever)\\n8. Organizational Capability Assessment — talent gaps, decision rights, span of control\\n[SECTION: Recommendations]\\n9. Technology & Process Maturity — current vs target state, gap analysis\\n10. Financial Performance Deep-Dive — EBITDA bridge (include bar chart: EBITDA bridge current to potential $M)\\n11. Strategic Options — fix, divest, transform with NPV scenarios\\n12. Priority Opportunities — ranked by impact and ease of implementation\\n13. Recommended Roadmap — 3-horizon plan with investment requirements\\n14. Return on Investment Summary — total value at stake, net investment, payback period',\n  investor: '[SECTION: The Opportunity]\\n1. Title\\n2. Executive Summary — investment thesis: problem, solution, traction, ask\\n3. The Problem — market pain, frequency, who suffers, why now\\n4. Our Solution — unique mechanism, product narrative, defensible moat\\n[SECTION: Market & Business Model]\\n5. Market Opportunity — TAM/SAM/SOM 3-year bottom-up build (include bar chart: TAM SAM SOM $B)\\n6. Business Model — revenue streams, unit economics, LTV to CAC ratio (include bar chart: ARR by revenue stream $M)\\n7. Traction & Key Metrics — MoM growth, retention, NRR, logo count (include line chart: ARR growth over 12 months $M)\\n8. Competitive Landscape — named competitors, differentiation matrix, why we win\\n[SECTION: Plan & Ask]\\n9. Go-to-Market — channel mix, CAC, sales cycle, expansion motion\\n10. Financial Projections — 3-year model: ARR, gross margin, burn, path to profitability (include bar chart: ARR and gross profit $M by year)\\n11. Team & Advisors — founder bios, relevant experience, board members\\n12. The Ask — raise amount, use of funds breakdown (include doughnut chart: use of funds % breakdown)'\n};\nconst dtLabel = { gtm: 'Go-to-Market', strategy: 'Corporate Strategy', diagnostic: 'Operational Diagnostic', investor: 'Investor Pitch' };\nconst frameworkNote = {\n  gtm: 'Apply Porter Five Forces for market attractiveness, TAM/SAM/SOM bottom-up build, and AARRR funnel for channel analysis.',\n  strategy: 'Apply MECE issue trees, SCR narrative structure (Situation-Complication-Resolution), and BCG matrix for portfolio prioritization.',\n  diagnostic: 'Apply EBITDA bridge analysis, root cause fishbone diagram, and maturity model scoring on a 1-5 scale for capability assessment.',\n  investor: 'Follow VC-standard Sequoia deck format: problem then solution then market then traction then team then ask. All metrics must be real or clearly labelled as projections.'\n};\nconst slideStructure = 'REQUIRED SLIDE STRUCTURE FOR ' + (dtLabel[deck_type] || deck_type).toUpperCase() + ' DECK:\\n' + (STRUCTURES[deck_type] || STRUCTURES.gtm);\nconst data = ['ENGAGEMENT DATA:', 'Client: ' + client_name, 'Industry: ' + industry, 'Deck Type: ' + (dtLabel[deck_type] || deck_type), 'Project Title: ' + deck_title, 'Client Brief: ' + requirements, 'Market Research: ' + research, 'Quality Review Feedback (incorporate all suggestions): ' + quality].join('\\n');\nconst jsonFmt = ['OUTPUT FORMAT: Return ONLY valid JSON. No markdown fences. No preamble. No commentary after the JSON.', '{\"slides\": [', '  { \"type\": \"title\", \"title\": \"<Deck Title>\", \"subtitle\": \"<Month YYYY | ' + client_name + ' | Strictly Confidential>\" },', '  { \"type\": \"section_header\", \"title\": \"<Section Topic>\", \"subtitle\": \"<One sentence framing the section>\" },', '  { \"type\": \"content\", \"title\": \"<Action headline: verb + specific number + business outcome>\", \"subtitle\": \"<One sharp So What insight>\",', '    \"bullets\": [{ \"text\": \"<assertion 15-25 words with %, $, or timeframe>\", \"sub_points\": [\"<data/evidence>\", \"<business implication>\"] }],', '    \"chart\": { \"type\": \"bar\", \"title\": \"<descriptive chart title>\", \"labels\": [\"<Real Label 1>\",\"<Real Label 2>\",\"<Real Label 3>\",\"<Real Label 4>\"], \"datasets\": [{ \"label\": \"<series>\", \"data\": [100,250,380,520], \"color\": \"#1E3A64\" }] }', '  }', ']}', '', 'SLIDE TYPE RULES:', '- type=title: first slide only. Fields: title, subtitle. No bullets, no chart.', '- type=section_header: one per [SECTION: X] marker. Fields: title, subtitle. No bullets, no chart.', '- type=content: all other slides. MUST have exactly 4 bullets. Chart only on slides marked (include X chart).', '', 'CHART RULES:', '- Labels MUST be real industry-specific terms from the data.', '- NEVER use placeholder labels like L1, L2, L3, Item1, Category1.', '- bar: 4-6 labels, navy #1E3A64.', '- horizontalBar: 4-6 items ranked by value descending.', '- line: 6-8 time-series labels, navy #1E3A64 main.', '- doughnut: 4-6 segments summing to 100%.', '- Data values must be realistic for the industry.'].join('\\n');\nconst rules = ['MANDATORY CONTENT RULES:', '1. HEADLINES: Action statements with specific numbers.', '2. BULLETS: Exactly 4 bullets per content slide. Each 15-25 words with a quantifier.', '3. SUB_POINTS: Exactly 2 per bullet. First = evidence. Second = business implication.', '4. FINANCIALS: Include NPV, EBITDA impact, payback period where relevant.', '5. LANGUAGE: levers, EBITDA uplift, run-rate savings, value at stake, quick wins.', '6. FRAMEWORK: ' + (frameworkNote[deck_type] || ''), '7. INDUSTRY SPECIFICITY: Use ' + industry + '-specific terminology and named competitors.', '8. SECTION HEADERS: One section_header slide per [SECTION: X] marker.'].join('\\n');\nlet prompt = ['You are a Senior Partner at McKinsey & Company with 20 years of experience in ' + industry + ' sector engagements.', 'Your task: Build a world-class board-ready ' + (dtLabel[deck_type] || deck_type) + ' consulting deck for ' + client_name + '.', 'This deck will be presented to the C-suite and Board of Directors. Every slide must deliver a crisp data-backed insight with no filler.', '', data, '', slideStructure, '', jsonFmt, '', rules].join('\\n');\nif (revision_notes) { prompt += '\\n\\nREVISION FEEDBACK — incorporate ALL of the following into this revised deck:\\n' + revision_notes; }\nreturn { json: { agent_input: prompt, engagement_id, deck_title, deck_type, requirements, client_name } };"
+      },
+      "id": "99030358-abcd-4e66-862b-6d98e23d409c",
+      "name": "Code in JavaScript2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.agent_input }}",
+        "options": {}
+      },
+      "id": "f6ec3bf7-4c8f-444b-bd1e-ee9bc389ebaa",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        896,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "b92c3e00-5613-479e-8c75-4616bf12c396",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        976,
+        336
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "lyRZnQVFcLzUjNaj",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.item.json.output;\nconst cleaned = raw.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\nconst parsed = JSON.parse(cleaned);\nreturn { json: {\n  slides:        parsed.slides,\n  engagement_id: $('Code in JavaScript2').first().json.engagement_id,\n  deck_title:    $('Code in JavaScript2').first().json.deck_title,\n  deck_type:     $('Code in JavaScript2').first().json.deck_type,\n  requirements:  $('Code in JavaScript2').first().json.requirements,\n  client_name:   $('Code in JavaScript2').first().json.client_name\n} };"
+      },
+      "id": "3e1d72dd-82be-486e-a226-341aeda5500e",
+      "name": "Code in JavaScript1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "title": "={{ $json.deck_title }}"
+      },
+      "id": "ed93d389-65ae-4b14-a487-74c2ee7f2824",
+      "name": "Create a presentation",
+      "type": "n8n-nodes-base.googleSlides",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        112
+      ],
+      "credentials": {
+        "googleSlidesOAuth2Api": {
+          "id": "F4WANeypDCifRJWo",
+          "name": "Google Slides account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const presentationId  = $input.item.json.presentationId;\nconst slides          = $('Code in JavaScript1').item.json.slides;\nconst engagement_id   = $('Code in JavaScript1').item.json.engagement_id;\nconst deck_title      = $('Code in JavaScript1').item.json.deck_title;\nconst deck_type       = $('Code in JavaScript1').item.json.deck_type || 'gtm';\nconst client_name     = $('Code in JavaScript1').item.json.client_name || 'Confidential';\nconst presentationUrl = 'https://docs.google.com/presentation/d/' + presentationId + '/edit';\nconst W = 9144000; const H = 5143500;\nconst NAVY   = { red: 0.118, green: 0.224, blue: 0.392 };\nconst ORANGE = { red: 0.929, green: 0.314, blue: 0.165 };\nconst WHITE  = { red: 1,     green: 1,     blue: 1     };\nconst DARK   = { red: 0.13,  green: 0.13,  blue: 0.13  };\nconst MID    = { red: 0.42,  green: 0.42,  blue: 0.42  };\nconst LTBLUE = { red: 0.80,  green: 0.85,  blue: 0.90  };\nconst MARGIN    = 320040;\nconst TOP_BAR_H = 300000;\nconst FOOTER_H  = 160000;\nfunction uid() { return 'el' + Math.random().toString(36).slice(2, 11); }\nfunction clean(s) { return (s || '').replace(/\\*\\*/g, '').replace(/\\*/g, '').trim(); }\nfunction truncate(s, max) { s = clean(s); return s.length > max ? s.slice(0, max - 3) + '...' : s; }\nfunction buildChartUrl(chart) {\n  var type = chart.type || 'bar';\n  var COLORS = ['#1E3A64','#ED5029','#2E86AB','#A23B72','#F18F01','#3D9970'];\n  var isLine = (type === 'line');\n  var datasets = chart.datasets.map(function(d, i) {\n    var bg = d.color || COLORS[i % COLORS.length];\n    return { label: d.label, data: d.data, backgroundColor: isLine ? (bg + '33') : bg, borderColor: bg, borderWidth: isLine ? 3 : 0, pointBackgroundColor: bg, pointRadius: isLine ? 4 : 0, fill: isLine };\n  });\n  var config = {\n    type: type,\n    data: { labels: chart.labels, datasets: datasets },\n    options: {\n      title: { display: !!(chart.title), text: chart.title || '', fontColor: '#1E3A64', fontSize: 15, fontStyle: 'bold', padding: 12 },\n      legend: { display: datasets.length > 1, labels: { fontColor: '#333', fontSize: 12, padding: 16 } },\n      scales: (type === 'doughnut' || type === 'pie') ? {} : { xAxes: [{ ticks: { fontColor: '#444', fontSize: 12, maxRotation: 35 }, gridLines: { color: '#e8e8e8', zeroLineColor: '#bbb' } }], yAxes: [{ ticks: { fontColor: '#444', fontSize: 12, beginAtZero: true }, gridLines: { color: '#e8e8e8', zeroLineColor: '#bbb' } }] },\n      layout: { padding: { left: 10, right: 10, top: 5, bottom: 10 } },\n      plugins: { datalabels: { display: false } }\n    }\n  };\n  return 'https://quickchart.io/chart?w=720&h=440&bkg=white&c=' + encodeURIComponent(JSON.stringify(config));\n}\nfunction rect(pageId, x, y, w, h, color) {\n  var id = uid();\n  return [\n    { createShape: { objectId: id, shapeType: 'RECTANGLE', elementProperties: { pageObjectId: pageId, size: { width: { magnitude: w, unit: 'EMU' }, height: { magnitude: h, unit: 'EMU' } }, transform: { scaleX: 1, scaleY: 1, translateX: x, translateY: y, unit: 'EMU' } } } },\n    { updateShapeProperties: { objectId: id, shapeProperties: { shapeBackgroundFill: { solidFill: { color: { rgbColor: color } } }, outline: { outlineFill: { solidFill: { color: { rgbColor: color } } } } }, fields: 'shapeBackgroundFill,outline' } }\n  ];\n}\nfunction textBox(pageId, text, x, y, w, h, opts) {\n  var id = uid();\n  var reqs = [\n    { createShape: { objectId: id, shapeType: 'TEXT_BOX', elementProperties: { pageObjectId: pageId, size: { width: { magnitude: w, unit: 'EMU' }, height: { magnitude: h, unit: 'EMU' } }, transform: { scaleX: 1, scaleY: 1, translateX: x, translateY: y, unit: 'EMU' } } } },\n    { insertText: { objectId: id, text: text } },\n    { updateTextStyle: { objectId: id, textRange: { type: 'ALL' }, style: { bold: opts.bold || false, italic: opts.italic || false, fontSize: { magnitude: opts.size || 14, unit: 'PT' }, foregroundColor: { opaqueColor: { rgbColor: opts.color || DARK } }, fontFamily: 'Calibri' }, fields: 'bold,italic,fontSize,foregroundColor,fontFamily' } }\n  ];\n  if (opts.align || opts.lineSpacing || opts.spaceAbove) {\n    var ps = {}; var pf = [];\n    if (opts.align)       { ps.alignment = opts.align; pf.push('alignment'); }\n    if (opts.lineSpacing) { ps.lineSpacing = opts.lineSpacing; pf.push('lineSpacing'); }\n    if (opts.spaceAbove)  { ps.spaceAbove = { magnitude: opts.spaceAbove, unit: 'EMU' }; pf.push('spaceAbove'); }\n    reqs.push({ updateParagraphStyle: { objectId: id, textRange: { type: 'ALL' }, style: ps, fields: pf.join(',') } });\n  }\n  return reqs;\n}\nfunction renderBullets(slideId, bullets, startX, startY, colW, maxBottom) {\n  var reqs = []; var y = startY;\n  var BULLET_H = 420000; var SUB_H = 290000; var GROUP_GAP = 70000; var SUB_GAP = 18000;\n  var INDENT = 260000; var ACCENT_W = 40000; var ACCENT_GAP = 40000;\n  bullets.forEach(function(b) {\n    if (y + BULLET_H > maxBottom) return;\n    var item = (typeof b === 'string') ? { text: b, sub_points: [] } : b;\n    var mainText = truncate(item.text, 120);\n    var accentId = uid();\n    reqs.push({ createShape: { objectId: accentId, shapeType: 'RECTANGLE', elementProperties: { pageObjectId: slideId, size: { width: { magnitude: ACCENT_W, unit: 'EMU' }, height: { magnitude: BULLET_H - 80000, unit: 'EMU' } }, transform: { scaleX: 1, scaleY: 1, translateX: startX, translateY: y + 40000, unit: 'EMU' } } } });\n    reqs.push({ updateShapeProperties: { objectId: accentId, shapeProperties: { shapeBackgroundFill: { solidFill: { color: { rgbColor: ORANGE } } }, outline: { outlineFill: { solidFill: { color: { rgbColor: ORANGE } } } } }, fields: 'shapeBackgroundFill,outline' } });\n    textBox(slideId, mainText, startX + ACCENT_W + ACCENT_GAP, y, colW - ACCENT_W - ACCENT_GAP, BULLET_H, { bold: true, size: 14, color: NAVY, lineSpacing: 115 }).forEach(function(r) { reqs.push(r); });\n    y += BULLET_H + 14000;\n    (item.sub_points || []).slice(0, 2).forEach(function(sp) {\n      if (y + SUB_H > maxBottom) return;\n      textBox(slideId, '-   ' + truncate(sp, 100), startX + INDENT, y, colW - INDENT, SUB_H, { bold: false, size: 12, color: MID, lineSpacing: 112 }).forEach(function(r) { reqs.push(r); });\n      y += SUB_H + SUB_GAP;\n    });\n    y += GROUP_GAP;\n  });\n  return reqs;\n}\nvar requests = [];\nslides.forEach(function(slide, idx) {\n  var slideId = uid();\n  requests.push({ createSlide: { objectId: slideId, insertionIndex: idx, slideLayoutReference: { predefinedLayout: 'BLANK' } } });\n  if (slide.type === 'title') {\n    requests.push({ updatePageProperties: { objectId: slideId, pageProperties: { pageBackgroundFill: { solidFill: { color: { rgbColor: NAVY } } } }, fields: 'pageBackgroundFill' } });\n    rect(slideId, 0, H - 760000, W, 760000, ORANGE).forEach(function(r) { requests.push(r); });\n    rect(slideId, MARGIN, 900000, 760000, 18288, ORANGE).forEach(function(r) { requests.push(r); });\n    textBox(slideId, clean(slide.title || deck_title), MARGIN, 1000000, W - 2 * MARGIN, 1800000, { bold: true, size: 40, color: WHITE, align: 'START', lineSpacing: 108 }).forEach(function(r) { requests.push(r); });\n    if (slide.subtitle) { textBox(slideId, clean(slide.subtitle), MARGIN, 2900000, W - 2 * MARGIN, 400000, { bold: false, size: 17, color: LTBLUE, align: 'START' }).forEach(function(r) { requests.push(r); }); }\n  } else if (slide.type === 'section_header') {\n    requests.push({ updatePageProperties: { objectId: slideId, pageProperties: { pageBackgroundFill: { solidFill: { color: { rgbColor: NAVY } } } }, fields: 'pageBackgroundFill' } });\n    rect(slideId, 0, 0, 120000, H, ORANGE).forEach(function(r) { requests.push(r); });\n    var titleY = Math.floor(H / 2) - 600000;\n    textBox(slideId, clean(slide.title || ''), 220000, titleY, W - 340000, 900000, { bold: true, size: 36, color: WHITE, align: 'START', lineSpacing: 108 }).forEach(function(r) { requests.push(r); });\n    rect(slideId, 220000, titleY + 960000, 900000, 18288, ORANGE).forEach(function(r) { requests.push(r); });\n    if (slide.subtitle) { textBox(slideId, clean(slide.subtitle), 220000, titleY + 1040000, W - 340000, 400000, { bold: false, size: 16, color: LTBLUE, align: 'START' }).forEach(function(r) { requests.push(r); }); }\n    textBox(slideId, String(idx + 1), W - 500000, H - 300000, 400000, 260000, { size: 10, color: LTBLUE, align: 'END' }).forEach(function(r) { requests.push(r); });\n  } else {\n    var hasChart = !!(slide.chart && slide.chart.labels && slide.chart.datasets && slide.chart.datasets.length > 0);\n    requests.push({ updatePageProperties: { objectId: slideId, pageProperties: { pageBackgroundFill: { solidFill: { color: { rgbColor: WHITE } } } }, fields: 'pageBackgroundFill' } });\n    rect(slideId, 0, 0, W, TOP_BAR_H, NAVY).forEach(function(r) { requests.push(r); });\n    rect(slideId, 0, 0, 80000, TOP_BAR_H, ORANGE).forEach(function(r) { requests.push(r); });\n    textBox(slideId, truncate(slide.title || '', 90), 150000, 20000, W - 200000, TOP_BAR_H - 20000, { bold: true, size: 16, color: WHITE, lineSpacing: 100 }).forEach(function(r) { requests.push(r); });\n    var contentY = TOP_BAR_H + 45000;\n    if (slide.subtitle) {\n      textBox(slideId, truncate(slide.subtitle, 130), MARGIN, contentY, W - 2 * MARGIN, 240000, { italic: true, size: 12, color: MID, lineSpacing: 108 }).forEach(function(r) { requests.push(r); });\n      contentY += 256000;\n    }\n    rect(slideId, MARGIN, contentY, W - 2 * MARGIN, 10000, ORANGE).forEach(function(r) { requests.push(r); });\n    contentY += 55000;\n    var maxBottom = H - FOOTER_H - 50000;\n    var slideBullets = slide.bullets || [];\n    if (hasChart) {\n      var colW = Math.floor((W - 3 * MARGIN) / 2);\n      renderBullets(slideId, slideBullets, MARGIN, contentY, colW, maxBottom).forEach(function(r) { requests.push(r); });\n      var chartUrl = buildChartUrl(slide.chart);\n      var chartH = Math.min(maxBottom - contentY, 2500000);\n      var chartImgId = uid();\n      requests.push({ createImage: { objectId: chartImgId, url: chartUrl, elementProperties: { pageObjectId: slideId, size: { width: { magnitude: colW, unit: 'EMU' }, height: { magnitude: chartH, unit: 'EMU' } }, transform: { scaleX: 1, scaleY: 1, translateX: 2 * MARGIN + colW, translateY: contentY, unit: 'EMU' } } } });\n    } else {\n      renderBullets(slideId, slideBullets, MARGIN, contentY, W - 2 * MARGIN, maxBottom).forEach(function(r) { requests.push(r); });\n    }\n    rect(slideId, 0, H - FOOTER_H, W, FOOTER_H, NAVY).forEach(function(r) { requests.push(r); });\n    textBox(slideId, deck_title + '   |   ' + (idx + 1), MARGIN, H - FOOTER_H + 25000, W - 2 * MARGIN, FOOTER_H, { size: 8, color: LTBLUE, align: 'CENTER' }).forEach(function(r) { requests.push(r); });\n  }\n});\nreturn { json: { presentation_id: presentationId, presentation_url: presentationUrl, batch_payload: JSON.stringify({ requests }), engagement_id, deck_title, deck_type, client_name } };"
+      },
+      "id": "477ca0c6-3616-4fce-9f75-23b3c16e4dab",
+      "name": "Code in JavaScript3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://slides.googleapis.com/v1/presentations/{{ $json.presentation_id }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSlidesOAuth2Api",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.batch_payload }}",
+        "options": {}
+      },
+      "id": "5c5e701d-0539-462d-b598-23570fcd9f5f",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1920,
+        112
+      ],
+      "credentials": {
+        "googleSlidesOAuth2Api": {
+          "id": "F4WANeypDCifRJWo",
+          "name": "Google Slides account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Code in JavaScript3').item.json.engagement_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "delivered"
+            },
+            {
+              "fieldId": "output_slides_url",
+              "fieldValue": "={{ $('Code in JavaScript3').item.json.presentation_url }}"
+            }
+          ]
+        }
+      },
+      "id": "e7dd7904-2b6a-43fd-bb79-d4b30139109d",
+      "name": "Update delivery status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2144,
+        112
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Create a presentation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a presentation": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Update delivery status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "637dd13c-2b9e-4b8d-8e6a-dab3deae48fb",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "4ac2396af9323fa3ba2e3ba4892c2c6a3beaa8ff4a2d77b9d22ed0dd12cf4044"
+  },
+  "id": "ig23NcKuSbS99jHW",
+  "tags": []
+}

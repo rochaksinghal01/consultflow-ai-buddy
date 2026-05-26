@@ -1,0 +1,466 @@
+{
+  "name": "QA reviewer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "qa-review",
+        "options": {}
+      },
+      "id": "f466b18f-842f-47f9-893b-509b4feef8b9",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "94dafd39-2a04-47c0-b2b0-00607a24b7ac"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.body.engagement_id }}"
+            }
+          ]
+        }
+      },
+      "id": "663b6320-6845-4164-9f6d-5f4e1cc03b5c",
+      "name": "Get a row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        224,
+        112
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookBody = $('Webhook').first().json.body;\nconst dbRow = $input.first().json || {};\nlet req = webhookBody.requirements_json || dbRow.requirements_json || {};\nif (typeof req === 'string') { try { req = JSON.parse(req); } catch(e) { req = {}; } }\nlet researchBrief = webhookBody.research_brief || dbRow.research_brief || {};\nif (typeof researchBrief === 'string') { try { researchBrief = JSON.parse(researchBrief); } catch(e) { researchBrief = {}; } }\nlet storyline = webhookBody.storyline_json || dbRow.storyline_json || {};\nif (typeof storyline === 'string') { try { storyline = JSON.parse(storyline); } catch(e) { storyline = {}; } }\nconst engagement_id = webhookBody.engagement_id || dbRow.id;\nconst client_name = webhookBody.client_name || dbRow.client_name || req.client_name || 'Client';\nconst deck_type = webhookBody.deck_type || dbRow.deck_type || req.deck_type || 'strategy';\nconst revision_notes = webhookBody.revision_notes || dbRow.revision_notes || '';\nconst slideSummary = storyline.slides ? storyline.slides.map(function(s, idx) {\n  return 'Slide ' + (idx + 1) + ': ' + (s.slide_title || '') + ' - ' + (s.key_message || '');\n}).join('\\n') : '';\nconst keyQs = req.key_questions ? req.key_questions.join(' | ') : '';\nconst findings = researchBrief.key_findings ? researchBrief.key_findings.map(function(f) { return f.finding || f; }).join(' | ') : '';\nconst recs = researchBrief.strategic_recommendations ? researchBrief.strategic_recommendations.join(' | ') : '';\nconst risks = researchBrief.risks_and_considerations ? researchBrief.risks_and_considerations.join(' | ') : '';\nlet agentInput = 'You are the QA Reviewer for a consulting firm. Critically review this slide storyline against the original engagement brief and research findings.\\n\\n' +\n  'ORIGINAL ENGAGEMENT BRIEF:\\n' +\n  'Client: ' + (req.client_name || client_name) + '\\n' +\n  'Deck Type: ' + (req.deck_type || deck_type) + '\\n' +\n  'Engagement Goal: ' + (req.engagement_goal || '') + '\\n' +\n  'Key Questions: ' + keyQs + '\\n' +\n  'Constraints: ' + (req.constraints || '') + '\\n\\n' +\n  'RESEARCH BRIEF:\\n' +\n  'Market Context: ' + (researchBrief.market_context || '') + '\\n' +\n  'Key Findings: ' + findings + '\\n' +\n  'Strategic Recommendations: ' + recs + '\\n' +\n  'Risks: ' + risks + '\\n\\n' +\n  'STORYLINE TO REVIEW:\\n' +\n  'Deck Title: ' + (storyline.deck_title || '') + '\\n' +\n  'Executive Summary: ' + (storyline.executive_summary || '') + '\\n' +\n  'Slides:\\n' + slideSummary + '\\n\\n';\nif (revision_notes) {\n  agentInput += '\\u26a0\\ufe0f PREVIOUS QA FEEDBACK TO INCORPORATE: ' + revision_notes + '\\n\\n';\n}\nagentInput += 'Review against 5 criteria: (1) Answers all key questions, (2) MECE narrative, (3) Grounded in research, (4) Strong BLUF executive summary, (5) No logic gaps.\\n\\n' +\n  'Output ONLY this JSON, no markdown:\\n' +\n  '{\"qa_feedback\": {\"overall_score\": 85, \"answers_key_questions\": true, \"is_mece\": true, \"grounded_in_research\": true, \"strong_bluf\": true, \"logic_gaps\": [\"gap 1 if any\"], \"overall_feedback\": \"2-3 sentence summary\", \"recommended_action\": \"approve/revise\", \"revision_notes\": \"specific changes needed or empty string\"}}';\nreturn [{ json: { agent_input: agentInput, engagement_id: engagement_id, client_name: client_name, deck_type: deck_type, requirements: req, research_brief: researchBrief, storyline: storyline } }];"
+      },
+      "id": "827aa1ba-00f3-4793-8778-f3cd65ac3950",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.agent_input }}",
+        "options": {}
+      },
+      "id": "bc489372-b8c5-44dd-a519-b0b9f1c0c980",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "2a4c17db-2301-4764-a1d7-7b527193fa0e",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        752,
+        336
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "lyRZnQVFcLzUjNaj",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output;\nconst prev = $('Code in JavaScript').first().json;\nconst cleaned = raw.replace(/```json\\n?/g, '').replace(/```/g, '').trim();\nvar parsed = {};\ntry { parsed = JSON.parse(cleaned); } catch(e) { parsed = { qa_feedback: { overall_feedback: cleaned } }; }\nconst qa_feedback = parsed.qa_feedback || parsed;\nreturn [{ json: { qa_feedback: qa_feedback, engagement_id: prev.engagement_id, client_name: prev.client_name, deck_type: prev.deck_type, requirements: prev.requirements, research_brief: prev.research_brief, storyline: prev.storyline } }];"
+      },
+      "id": "f69970b9-8a6e-4209-9a9b-26066d642988",
+      "name": "Code in JavaScript1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Code in JavaScript1').item.json.engagement_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "draft_review"
+            },
+            {
+              "fieldId": "quality_report",
+              "fieldValue": "={{ JSON.stringify($('Code in JavaScript1').item.json.qa_feedback) }}"
+            }
+          ]
+        }
+      },
+      "id": "07587b68-3a9e-4604-bce3-cb9aaaf857ad",
+      "name": "Update a row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        112
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B33AV1A3U",
+          "mode": "list",
+          "cachedResultName": "gates"
+        },
+        "message": "=*Gate 4 — QA Review*\n*Client:* {{ $('Code in JavaScript1').item.json.client_name }}\n*Deck Type:* {{ $('Code in JavaScript1').item.json.deck_type }}\n\n*Quality Score:* {{ $('Code in JavaScript1').item.json.qa_feedback.overall_score }}/100\n*MECE:* {{ $('Code in JavaScript1').item.json.qa_feedback.is_mece }}\n*Grounded in Research:* {{ $('Code in JavaScript1').item.json.qa_feedback.grounded_in_research }}\n\n*Overall Feedback:*\n{{ $('Code in JavaScript1').item.json.qa_feedback.overall_feedback }}\n\n*Recommended Action:* {{ $('Code in JavaScript1').item.json.qa_feedback.recommended_action }}\n\n*Engagement ID:* {{ $('Code in JavaScript1').item.json.engagement_id }}\n\nUse the form link to Approve or Decline with feedback.",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "={{ \"customForm\" }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "6e991a17-e02e-445a-b404-155710c7ba84",
+      "name": "Send message and wait for response",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1472,
+        112
+      ],
+      "webhookId": "b143ff45-8a1e-4694-a5bb-fe61463ad50a",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "RvtsGwRYrVWx7tiQ",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "r4-approval",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3f6c59bb-72ae-4304-bcd4-580793aa6e86",
+      "name": "If1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rochak01.app.n8n.cloud/webhook/delivery",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "engagement_id",
+              "value": "={{ $('Code in JavaScript1').item.json.engagement_id }}"
+            },
+            {
+              "name": "requirements_json",
+              "value": "={{ JSON.stringify($('Code in JavaScript1').item.json.requirements) }}"
+            },
+            {
+              "name": "research_brief",
+              "value": "={{ JSON.stringify($('Code in JavaScript1').item.json.research_brief) }}"
+            },
+            {
+              "name": "storyline_json",
+              "value": "={{ JSON.stringify($('Code in JavaScript1').item.json.storyline) }}"
+            },
+            {
+              "name": "qa_feedback",
+              "value": "={{ JSON.stringify($('Code in JavaScript1').item.json.qa_feedback) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "97b12da8-7712-4b7a-9508-156b4f34f821",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1920,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Code in JavaScript1').item.json.engagement_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "revision_requested"
+            },
+            {
+              "fieldId": "revision_gate",
+              "fieldValue": "4"
+            },
+            {
+              "fieldId": "revision_notes",
+              "fieldValue": "={{ $json.Feedback || '' }}"
+            }
+          ]
+        }
+      },
+      "id": "dd76eee5-7f76-4961-b889-8c90f592cb19",
+      "name": "Update revision status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        208
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rochak01.app.n8n.cloud/webhook/qa-review",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "engagement_id",
+              "value": "={{ $('Code in JavaScript1').item.json.engagement_id }}"
+            },
+            {
+              "name": "revision_notes",
+              "value": "={{ $('Send message and wait for response').item.json.Feedback || '' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "60540469-276d-4985-9521-b081f6782a1c",
+      "name": "Retrigger QA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2144,
+        208
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update revision status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update revision status": {
+      "main": [
+        [
+          {
+            "node": "Retrigger QA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "7dca6d91-5cdd-47e9-952a-cf4a4a7c225c",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "4ac2396af9323fa3ba2e3ba4892c2c6a3beaa8ff4a2d77b9d22ed0dd12cf4044"
+  },
+  "id": "5cEIzgcFAXtdyG0e",
+  "tags": []
+}

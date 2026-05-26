@@ -1,0 +1,187 @@
+{
+  "name": "RAG Documents",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e584c5bd-77b0-4db5-9152-aff9c84d268b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "const docs = [\n  { id: \"doc-001\", source: \"McKinsey — Market Entry Frameworks\", document_name: \"B2B SaaS Market Entry Playbook\", text: \"Go-to-market strategy for B2B SaaS in emerging markets requires a channel-first approach when no direct sales presence exists. The most effective market entry model combines three elements: (1) anchor partner identification — find 2-3 established local players with existing customer relationships in your target segment; (2) co-selling motion — train partner sales teams on your product and provide deal support for the first 6 months; (3) revenue share structure — offer 20-30% margin to partners in year one to incentivise adoption. In India specifically, the fintech ecosystem is concentrated in Mumbai, Bengaluru, and Delhi-NCR, and channel partners in these markets typically expect exclusivity clauses for their geography during the initial 12-month period. Market entry without a direct sales team requires investing heavily in partner enablement: dedicated onboarding resources, co-branded materials, and a partner success manager from your side.\" },\n  { id: \"doc-002\", source: \"BCG — India Fintech Report 2024\", document_name: \"India Fintech Market Sizing and Segmentation\", text: \"The Indian fintech market reached $110 billion in transaction value in 2023 and is projected to grow at 23% CAGR through 2028. B2B fintech segments with highest SaaS adoption: (1) Lending technology — NBFCs and small banks actively seeking credit decisioning, loan origination, and collections SaaS. Market size ₹8,400 Cr. (2) Payments infrastructure — UPI-native businesses needing reconciliation, fraud detection, and treasury management tools. Market size ₹5,200 Cr. (3) Regulatory compliance — SEBI, RBI, and IRDAI compliance automation seeing 40%+ YoY growth as regulations tighten. Market size ₹3,800 Cr. Key buyer profiles: CTO and CRO at mid-sized NBFCs (AUM ₹500-5000 Cr), Head of Technology at cooperative banks, and VP Product at digital lending platforms. Average contract value for B2B fintech SaaS: ₹15-60 lakh per year. Sales cycle: 3-6 months with 4-7 stakeholders involved in the decision.\" },\n  { id: \"doc-003\", source: \"Bain — Channel Partnership Models\", document_name: \"Indirect Sales Channel Strategy for SaaS\", text: \"Three proven channel partnership models for B2B SaaS market entry without a direct sales team: (1) Reseller model — partner purchases licences at wholesale price and resells to end customers. Works best when partner has deep relationships with SME customers. Typical margin: 25-35%. Risk: partner may deprioritise your product. (2) Referral model — partner introduces leads and receives commission on closed deals. Lower commitment required, easier to recruit. Typical referral fee: 10-15% of first year ACV. Best for partners who sell complementary products. (3) Systems Integrator (SI) model — partner implements and customises your product for enterprise clients. Highest deal values but requires significant technical enablement investment upfront. In the Indian B2B SaaS market, the most scalable model combines referral partnerships with tier-2 SIs who specialise in fintech implementations. Channel partner selection criteria: minimum 50 active enterprise clients, existing fintech vertical practice, dedicated pre-sales capacity, and willingness to co-invest in marketing.\" },\n  { id: \"doc-004\", source: \"Deloitte — India Digital Transformation\", document_name: \"Digital Adoption Patterns in Indian Financial Services\", text: \"Indian financial services firms are accelerating SaaS adoption driven by three forces: RBI's push for core banking modernisation, competitive pressure from digital-native NBFCs, and the need to serve the next 200 million banked customers efficiently. Key adoption barriers for international SaaS vendors entering India: (1) Data localisation — RBI mandates payment data stored on Indian servers; SaaS vendors must have Indian data centre presence or local cloud deployment. (2) Integration complexity — Indian banks run legacy core banking systems (Finacle, Temenos) requiring custom API connectors. Budget 3-6 months for integration work. (3) Procurement process — public sector banks require L1 vendor empanelment; private banks and NBFCs move faster with 60-90 day procurement cycles. (4) Reference customer requirement — Indian buyers require 2-3 Indian reference customers before signing. This is the classic cold start problem for international vendors — solved by offering a 6-month pilot at 50% discount to anchor reference customers in the first cohort.\" },\n  { id: \"doc-005\", source: \"McKinsey — GTM Segmentation Framework\", document_name: \"Beachhead Segment Selection for Emerging Market Entry\", text: \"Beachhead segment selection framework for B2B SaaS entering India: evaluate each segment across four dimensions — (1) Willingness to pay: mid-sized private sector banks and well-funded NBFCs have highest WTP; public sector banks have lowest WTP and longest sales cycles. (2) Decision-making speed: fintech startups (Series B+) make procurement decisions in 30-45 days vs 9-12 months for large PSU banks. (3) Reference value: a named tier-1 private bank (HDFC, ICICI, Axis, Kotak) as reference customer is worth more than 10 NBFC references. (4) Replication potential: how many similar companies exist in the segment — lending-tech NBFCs number 9,000+ in India, making this a highly replicable segment. Recommended beachhead for most B2B fintech SaaS: Series B+ digital lending NBFCs with AUM of ₹500-2,000 Cr. They have the budget, move fast, value technology differentiation, and exist in sufficient numbers to build pipeline without exhausting the segment.\" },\n  { id: \"doc-006\", source: \"BCG — SaaS Pricing in Emerging Markets\", document_name: \"Pricing Strategy for B2B SaaS in India\", text: \"Pricing localisation is critical for B2B SaaS success in India. Global pricing applied directly results in 60-70% deal loss at late stages. Recommended pricing architecture for Indian market: (1) Usage-based pricing outperforms seat-based in India — Indian buyers resist committing to seat counts upfront. Tie pricing to transactions processed, API calls, or AUM managed. (2) Annual contract value typically 40-60% below US equivalent for comparable segments — budget this into your India P&L from day one. (3) Rupee-denominated contracts strongly preferred — USD contracts create FX risk concerns for mid-market buyers and slow procurement. (4) Pilots and POCs are not optional — 80% of Indian enterprise deals begin with a paid pilot (₹2-5 lakh for 3 months). Structure your pilot to generate a compelling ROI metric that becomes the basis for the full contract. (5) Freemium does not work in B2B fintech — decision makers want supported, compliance-assured implementations, not self-serve trials.\" },\n  { id: \"doc-007\", source: \"Bain — Partner Enablement Playbook\", document_name: \"Channel Partner Onboarding and Enablement Framework\", text: \"Partner enablement is the most underinvested area in indirect channel GTM strategies. The companies that win in channel-led markets invest disproportionately in partner success in months 0-6. Proven enablement framework: Week 1-2: product certification program — 8-hour structured training culminating in certification exam. Only certified partners can sell independently. Week 3-4: joint pipeline building — assign a partner success manager to each anchor partner for the first 6 months. Run 3 joint prospecting workshops using partner's existing client list. Month 2-3: co-selling on first 3 deals — your pre-sales team participates in all calls. Partner lead, you support. Month 4-6: handover with safety net — partner runs deals independently but has 24-hour SLA for technical questions. Key metrics to track: partner-sourced pipeline (target: 40% of total by month 6), partner-led close rate (target: >25%), time from partner registration to first deal closed (target: <90 days).\" },\n  { id: \"doc-008\", source: \"Deloitte — India Regulatory Environment\", document_name: \"Regulatory Compliance Checklist for SaaS Vendors in Indian Financial Services\", text: \"International SaaS vendors selling to Indian financial services institutions must navigate three regulatory frameworks: (1) RBI IT Framework — banks must ensure vendors meet RBI's guidelines on IT risk and cybersecurity. Vendors selling to scheduled commercial banks need SOC 2 Type II certification at minimum. (2) Data localisation — payment system data must be stored only in India (RBI circular 2018). Cloud deployment on AWS Mumbai, Azure India, or GCP Mumbai satisfies this requirement. Sensitive personal data of Indian citizens subject to DPDPA 2023 — requires data processing agreements, breach notification within 72 hours, and data principal rights support. (3) SEBI guidelines for capital markets — vendors selling to brokers, asset managers, or exchanges must register as Market Infrastructure Institution technology provider in some categories. Timeline to compliance readiness: 4-6 months for a well-resourced vendor. Cost estimate: ₹40-80 lakh for full compliance setup including legal, audit, and certification costs.\" },\n  { id: \"doc-009\", source: \"McKinsey — First 90 Days Market Entry\", document_name: \"90-Day Market Entry Action Plan for B2B SaaS India\", text: \"Sequenced action plan for B2B SaaS market entry in India via channel partnerships: Days 1-30 (Foundation): Register Indian entity (Pvt Ltd preferred — takes 15-20 days). Hire one India-based partner success manager (target profile: 5+ years in fintech sales, existing NBFC/bank relationships, Bengaluru or Mumbai based). Identify and shortlist 8-10 potential anchor partners. Days 31-60 (Partner Activation): Sign LOIs with 2-3 anchor partners. Begin co-selling motion immediately. Run partner certification program. Present at 1-2 Indian fintech events. Days 61-90 (Pipeline Validation): Target 3-5 qualified opportunities sourced through anchor partners. Close at least 1 pilot deal. Key milestone at day 90: partner-sourced pipeline of ₹1-2 Cr ACV, 1 signed pilot, and 2 reference customer commitments. If these are not met, diagnose partner selection or enablement before expanding channel.\" },\n  { id: \"doc-010\", source: \"BCG — Competitive Landscape India Fintech SaaS\", document_name: \"Competitive Analysis: B2B Fintech SaaS India 2024\", text: \"The Indian B2B fintech SaaS market has three tiers of competition: Tier 1 — established Indian players with deep local integration: Perfios (financial data aggregation), Finezza (lending SaaS), Signzy (KYC automation), M2P Fintech (card-as-a-service). These players have 5-8 year head starts, local compliance certifications, and existing bank relationships. Tier 2 — international players with India presence: Temenos, FIS, Finastra (core banking); Mambu (cloud core); Thought Machine (modern core). Mid-market and NBFC segments are underserved by these players — this is the whitespace. Tier 3 — domestic startups without institutional backing: fragmented, regional, often single-product. Competitive positioning recommendation: position against Tier 2 players on agility and cost (implement in 60 days vs their 12-18 months) and against Tier 1 players on product sophistication and global best practices.\" }\n];\n\nreturn docs.map(doc => ({ json: doc }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "add4084b-82aa-47ec-b780-e3986feb393c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b116d6d2-2339-4af9-8a57-65ff2d074ceb",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=AIzaSyCF0CWu5vmT-Ip_rhAxU7YXwrhe6Czkurw",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": {\n    \"parts\": [\n      {\n        \"text\": \"{{ $json.text }}\"\n      }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        656,
+        16
+      ],
+      "id": "d401a435-2a8c-4545-9471-6b0e0c230338",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const vector = $input.item.json.embedding.values;\nconst doc = $('Loop Over Items').item.json;\n\nconst pineconeBody = JSON.stringify({\n  vectors: [{\n    id: doc.id,\n    values: vector,\n    metadata: {\n      source: doc.source,\n      document_name: doc.document_name,\n      text: doc.text\n    }\n  }],\n  namespace: \"meridian-demo\"\n});\n\nreturn {\n  json: {\n    pinecone_body: pineconeBody\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        16
+      ],
+      "id": "a10469be-bd7f-4d14-8445-354b2498add7",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://consultflow-ai-7iind8n.svc.aped-4627-b74a.pinecone.io/vectors/upsert",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Api-Key",
+              "value": "pcsk_521RQN_3McLWtxLPPpRj4g3eRz8YSe5oxTZ86nWhdjx2TucufEwgJBrbFNqHc7iVfRNLCz"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.pinecone_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1056,
+        16
+      ],
+      "id": "bc33a9da-5a29-4ff5-8e38-c968ab4d00be",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "6ffd03c3-3b02-41dc-aecf-5a5e1fe91768",
+  "meta": {
+    "instanceId": "4ac2396af9323fa3ba2e3ba4892c2c6a3beaa8ff4a2d77b9d22ed0dd12cf4044"
+  },
+  "id": "ZRXWXfnyCK1VjFYu",
+  "tags": []
+}
