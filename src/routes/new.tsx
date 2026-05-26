@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout, DECK_TYPES } from "@/components/AppLayout";
 import { toast } from "sonner";
 import { Check, ChevronRight, ChevronLeft } from "lucide-react";
+import { WEBHOOKS } from "@/config/webhooks";
 
 export const Route = createFileRoute("/new")({ component: NewEngagement });
 
@@ -118,7 +119,7 @@ function NewEngagement() {
       return;
     }
     try {
-      await fetch("https://rochak01.app.n8n.cloud/webhook/consultflow-start", {
+      await fetch(WEBHOOKS.discovery, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -209,30 +210,148 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 
 const inputCls = "w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[var(--navy)]/30 focus:border-[var(--navy)]";
 
+type ClientRecord = { client_name: string; industry: string | null; company_size: string | null; contact_name: string | null; contact_email: string | null };
+
 function Step1({ form, set, errors }: any) {
+  const [mode, setMode] = useState<"pick" | "new">("pick");
+  const [clients, setClients] = useState<ClientRecord[]>([]);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    supabase
+      .from("engagements")
+      .select("client_name, industry, company_size, contact_name, contact_email")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (!data) return;
+        const seen = new Set<string>();
+        const unique = data.filter((d: ClientRecord) => {
+          if (!d.client_name || seen.has(d.client_name)) return false;
+          seen.add(d.client_name);
+          return true;
+        });
+        setClients(unique as ClientRecord[]);
+        if (unique.length === 0) setMode("new");
+      });
+  }, []);
+
+  const filtered = clients.filter(
+    (c) =>
+      c.client_name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.industry ?? "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectClient = (c: ClientRecord) => {
+    set("client_name", c.client_name);
+    set("industry", c.industry ?? "");
+    set("company_size", c.company_size ?? "");
+    set("contact_name", c.contact_name ?? "");
+    set("contact_email", c.contact_email ?? "");
+    setMode("new");
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-5">
-      <Field label="Client Name" error={errors.client_name}>
-        <input className={inputCls} value={form.client_name} onChange={(e) => set("client_name", e.target.value)} />
-      </Field>
-      <Field label="Industry" error={errors.industry}>
-        <select className={inputCls} value={form.industry} onChange={(e) => set("industry", e.target.value)}>
-          <option value="">Select…</option>
-          {INDUSTRIES.map((i) => <option key={i}>{i}</option>)}
-        </select>
-      </Field>
-      <Field label="Company Size" error={errors.company_size}>
-        <select className={inputCls} value={form.company_size} onChange={(e) => set("company_size", e.target.value)}>
-          <option value="">Select…</option>
-          {SIZES.map((i) => <option key={i}>{i}</option>)}
-        </select>
-      </Field>
-      <Field label="Primary Contact Name" error={errors.contact_name}>
-        <input className={inputCls} value={form.contact_name} onChange={(e) => set("contact_name", e.target.value)} />
-      </Field>
-      <Field label="Primary Contact Email" error={errors.contact_email}>
-        <input type="email" className={inputCls} value={form.contact_email} onChange={(e) => set("contact_email", e.target.value)} />
-      </Field>
+    <div>
+      {/* Mode toggle */}
+      <div className="flex gap-2 p-1 bg-secondary rounded-lg mb-6">
+        <button
+          type="button"
+          onClick={() => setMode("pick")}
+          className={`flex-1 py-2 rounded-md text-sm font-medium transition ${
+            mode === "pick" ? "bg-white text-[var(--navy)] shadow-sm" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Existing Client
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("new")}
+          className={`flex-1 py-2 rounded-md text-sm font-medium transition ${
+            mode === "new" ? "bg-white text-[var(--navy)] shadow-sm" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          + New Client
+        </button>
+      </div>
+
+      {mode === "pick" ? (
+        <div>
+          <input
+            className={inputCls + " mb-3"}
+            placeholder="Search clients by name or industry…"
+            value={search}
+            onChange={(ev) => setSearch(ev.target.value)}
+            autoFocus
+          />
+          {filtered.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground text-sm">
+              {clients.length === 0 ? "No existing clients yet." : "No clients match your search."}
+              <button
+                type="button"
+                onClick={() => setMode("new")}
+                className="block mx-auto mt-2 text-[var(--navy)] font-medium hover:underline"
+              >
+                Create new client →
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {filtered.map((c, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => selectClient(c)}
+                  className="w-full text-left px-4 py-3 rounded-lg border border-border hover:border-[var(--navy)] hover:bg-secondary/60 transition group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-sm text-foreground">{c.client_name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {[c.industry, c.company_size].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                    <span className="text-xs text-[var(--navy)] font-medium opacity-0 group-hover:opacity-100 transition">
+                      Select →
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          {form.client_name && (
+            <div className="mb-4 px-4 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-sm text-emerald-700 flex items-center justify-between">
+              <span>Loaded from: <strong>{form.client_name}</strong> — edit fields below if needed</span>
+              <button type="button" onClick={() => { setMode("pick"); }} className="text-xs text-emerald-600 hover:underline">change</button>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-5">
+            <Field label="Client Name" error={errors.client_name}>
+              <input className={inputCls} value={form.client_name} onChange={(e) => set("client_name", e.target.value)} />
+            </Field>
+            <Field label="Industry" error={errors.industry}>
+              <select className={inputCls} value={form.industry} onChange={(e) => set("industry", e.target.value)}>
+                <option value="">Select…</option>
+                {INDUSTRIES.map((i) => <option key={i}>{i}</option>)}
+              </select>
+            </Field>
+            <Field label="Company Size" error={errors.company_size}>
+              <select className={inputCls} value={form.company_size} onChange={(e) => set("company_size", e.target.value)}>
+                <option value="">Select…</option>
+                {SIZES.map((i) => <option key={i}>{i}</option>)}
+              </select>
+            </Field>
+            <Field label="Primary Contact Name" error={errors.contact_name}>
+              <input className={inputCls} value={form.contact_name} onChange={(e) => set("contact_name", e.target.value)} />
+            </Field>
+            <Field label="Primary Contact Email" error={errors.contact_email}>
+              <input type="email" className={inputCls} value={form.contact_email} onChange={(e) => set("contact_email", e.target.value)} />
+            </Field>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -259,7 +378,7 @@ function Step2({ form, set, errors }: any) {
                 </div>
               )}
               <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg mb-3 text-2xl border-l-4 ${d.accent}`}>
-                {DECK_TYPES[key].icon}
+                {DECK_TYPES[key]?.icon ?? "📄"}
               </div>
               <h3 className="font-semibold text-foreground">{d.title}</h3>
               <p className="text-xs text-muted-foreground mt-1 mb-3">{d.desc}</p>
