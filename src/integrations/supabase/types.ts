@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -16,94 +14,184 @@ export type Database = {
     Tables: {
       engagements: {
         Row: {
-          additional_context: string | null
-          budget: string | null
-          challenge: string | null
-          client_name: string | null
-          company_size: string | null
-          contact_email: string | null
-          contact_name: string | null
-          created_at: string
-          current_step: number | null
-          deck_type: string | null
-          delivery_url: string | null
           id: string
+          firm_id: string | null
+          created_by: string | null
+          client_name: string
           industry: string | null
-          objectives: string | null
-          presentation_id: string | null
-          project_name: string | null
-          qa_feedback: string | null
+          deck_type: string
+          engagement_goal: string | null
+          timeline: string | null
+          constraints: string | null
+          status: string | null
           requirements_json: Json | null
           research_brief: Json | null
-          research_summary: string | null
+          storyline_json: Json | null
+          draft_content: Json | null
+          quality_report: Json | null
+          output_slides_url: string | null
           revision_gate: number | null
           revision_notes: string | null
-          slack_thread_ts: string | null
-          status: string | null
-          storyline_json: Json | null
-          storyline_summary: string | null
-          timeline: string | null
+          contact_name: string | null
+          contact_email: string | null
+          company_size: string | null
+          project_name: string | null
+          budget: string | null
+          additional_context: string | null
+          created_at: string
           updated_at: string
         }
         Insert: {
-          additional_context?: string | null
-          budget?: string | null
-          challenge?: string | null
-          client_name?: string | null
-          company_size?: string | null
-          contact_email?: string | null
-          contact_name?: string | null
-          created_at?: string
-          current_step?: number | null
-          deck_type?: string | null
-          delivery_url?: string | null
           id?: string
+          firm_id?: string | null
+          created_by?: string | null
+          client_name: string
           industry?: string | null
-          objectives?: string | null
-          presentation_id?: string | null
-          project_name?: string | null
-          qa_feedback?: string | null
+          deck_type: string
+          engagement_goal?: string | null
+          timeline?: string | null
+          constraints?: string | null
+          status?: string | null
           requirements_json?: Json | null
           research_brief?: Json | null
-          research_summary?: string | null
+          storyline_json?: Json | null
+          draft_content?: Json | null
+          quality_report?: Json | null
+          output_slides_url?: string | null
           revision_gate?: number | null
           revision_notes?: string | null
-          slack_thread_ts?: string | null
-          status?: string | null
-          storyline_json?: Json | null
-          storyline_summary?: string | null
-          timeline?: string | null
+          contact_name?: string | null
+          contact_email?: string | null
+          company_size?: string | null
+          project_name?: string | null
+          budget?: string | null
+          additional_context?: string | null
+          created_at?: string
           updated_at?: string
         }
         Update: {
-          additional_context?: string | null
-          budget?: string | null
-          challenge?: string | null
-          client_name?: string | null
-          company_size?: string | null
-          contact_email?: string | null
-          contact_name?: string | null
-          created_at?: string
-          current_step?: number | null
-          deck_type?: string | null
-          delivery_url?: string | null
           id?: string
+          firm_id?: string | null
+          created_by?: string | null
+          client_name?: string
           industry?: string | null
-          objectives?: string | null
-          presentation_id?: string | null
-          project_name?: string | null
-          qa_feedback?: string | null
+          deck_type?: string
+          engagement_goal?: string | null
+          timeline?: string | null
+          constraints?: string | null
+          status?: string | null
           requirements_json?: Json | null
           research_brief?: Json | null
-          research_summary?: string | null
+          storyline_json?: Json | null
+          draft_content?: Json | null
+          quality_report?: Json | null
+          output_slides_url?: string | null
           revision_gate?: number | null
           revision_notes?: string | null
-          slack_thread_ts?: string | null
-          status?: string | null
-          storyline_json?: Json | null
-          storyline_summary?: string | null
-          timeline?: string | null
+          contact_name?: string | null
+          contact_email?: string | null
+          company_size?: string | null
+          project_name?: string | null
+          budget?: string | null
+          additional_context?: string | null
+          created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      firms: {
+        Row: {
+          id: string
+          name: string
+          template_slides_url: string | null
+          drive_folder_id: string | null
+          pinecone_namespace: string | null
+          demo_mode: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          template_slides_url?: string | null
+          drive_folder_id?: string | null
+          pinecone_namespace?: string | null
+          demo_mode?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          template_slides_url?: string | null
+          drive_folder_id?: string | null
+          pinecone_namespace?: string | null
+          demo_mode?: boolean | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          id: string
+          name: string
+          email: string
+          firm_id: string | null
+          role: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id: string
+          name: string
+          email: string
+          firm_id?: string | null
+          role?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          email?: string
+          firm_id?: string | null
+          role?: string | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      gates: {
+        Row: {
+          id: string
+          engagement_id: string | null
+          gate_number: number
+          gate_name: string
+          status: string | null
+          reviewer_id: string | null
+          notes: string | null
+          slack_ts: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          engagement_id?: string | null
+          gate_number: number
+          gate_name: string
+          status?: string | null
+          reviewer_id?: string | null
+          notes?: string | null
+          slack_ts?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          engagement_id?: string | null
+          gate_number?: number
+          gate_name?: string
+          status?: string | null
+          reviewer_id?: string | null
+          notes?: string | null
+          slack_ts?: string | null
+          created_at?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -117,131 +205,5 @@ export type Database = {
     Enums: {
       [_ in never]: never
     }
-    CompositeTypes: {
-      [_ in never]: never
-    }
   }
 }
-
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
-
-export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
-
-export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
-
-export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {},
-  },
-} as const

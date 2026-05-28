@@ -1,0 +1,204 @@
+{
+  "name": "Discovery Analyst",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consultflow-start",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "29fcfe84-c8ec-478c-a0bb-4730242cb061",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "d79d81e3-6dd5-40de-9fea-aaf10f13f2ef"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook').first().json.body;\nreturn [{\n  json: {\n    engagement_id: body.id,\n    client_name: body.client_name || '',\n    industry: body.industry || '',\n    deck_type: body.deck_type || 'strategy',\n    engagement_goal: body.objectives || '',\n    timeline: body.timeline || '',\n    constraints: body.challenge || '',\n    budget: body.budget || '',\n    company_size: body.company_size || '',\n    project_name: body.project_name || '',\n    additional_context: body.additional_context || '',\n    revision_notes: body.revision_notes || ''\n  }\n}];"
+      },
+      "id": "bd90d940-0a97-42c5-8999-de41e66b1d98",
+      "name": "Prepare Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Client: {{ $json.client_name }}\nIndustry: {{ $json.industry }}\nDeck type: {{ $json.deck_type }}\nGoal: {{ $json.engagement_goal }}\nChallenge: {{ $json.constraints }}\nTimeline: {{ $json.timeline }}\nBudget: {{ $json.budget }}\nCompany size: {{ $json.company_size }}\nAdditional context: {{ $json.additional_context }}\n{{ $json.revision_notes ? \"REVISION FEEDBACK - incorporate this into the brief: \" + $json.revision_notes : \"\" }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are the Discovery Analyst for ConsultFlow AI.\n\nExtract a structured engagement brief. Set ready_to_proceed to true unless the brief is completely unusable.\n\nOutput ONLY valid JSON, no markdown:\n{\n  \"client_name\": \"string\",\n  \"industry\": \"string\",\n  \"deck_type\": \"string\",\n  \"engagement_goal\": \"one sharp consulting sentence\",\n  \"key_questions\": [\"q1\", \"q2\", \"q3\"],\n  \"target_audience\": \"string\",\n  \"timeline\": \"string\",\n  \"constraints\": \"string\",\n  \"rag_search_query\": \"2-3 sentences describing what to research\",\n  \"ready_to_proceed\": true\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "67cfa14f-acbc-4c72-995c-d1faf5f53922",
+      "name": "Basic LLM Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        448,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "52167c89-e829-4639-ac74-b71bddc5cf5c",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        336
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "lyRZnQVFcLzUjNaj",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.item.json.text || $input.item.json.output || '';\nconst cleaned = raw.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\nconst parsed = JSON.parse(cleaned);\nconst engagementId = $('Prepare Prompt').first().json.engagement_id;\nreturn { json: { engagement_id: engagementId, structured_brief: parsed } };"
+      },
+      "id": "c3252ba0-39e9-47a3-93ca-a44e658a037b",
+      "name": "Code in JavaScript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "engagements",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.engagement_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "requirements_json",
+              "fieldValue": "={{ $json.structured_brief }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "research"
+            }
+          ]
+        }
+      },
+      "id": "1488b9dc-e721-4af9-8bed-6d103db9c7e3",
+      "name": "Update a row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        112
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "ETz4Jzy8jjenPGyT",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Prompt": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "51902511-e537-44eb-bf16-209741117c3f",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "4ac2396af9323fa3ba2e3ba4892c2c6a3beaa8ff4a2d77b9d22ed0dd12cf4044"
+  },
+  "id": "ZmOdB9SVls4boJtm",
+  "tags": []
+}
